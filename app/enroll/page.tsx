@@ -1,11 +1,10 @@
 import connectDB from "@/lib/db";
-import Schedule from "@/models/schedule.model";
 import Student from "@/models/student.model";
-import Tutor from "@/models/tutor.model";
+import TutorGroup from "@/models/tutorGroup.model";
 import { getSession } from "@/actions/user.action";
+import { enrollWithTutor } from "@/actions/enrollment.action";
 import EnrollTutorButton from "@/components/EnrollButton";
 import { redirect } from "next/navigation";
-import { enrollWithTutor } from "@/actions/enrollment.action";
 import { Calendar, Clock } from "lucide-react";
 
 function minutesToTime(minutes: number): string {
@@ -34,28 +33,35 @@ export default async function EnrollPage({ searchParams }: PageProps) {
         redirect("/dashboard");
     }
 
-    // 2. Direct Server Action Flow (When tutor_id is provided)
+    // 2. Direct Server Action Flow (When tutor_id is provided in URL params)
     if (tutor_id) {
         const res = await enrollWithTutor(tutor_id);
 
         if (!res.success) {
-            // Pass error back to the page or redirect to dashboard
             redirect(`/dashboard?error=${encodeURIComponent(res.error || "Enrollment failed")}`);
         } else {
-            // Redirect with success message
             redirect(`/dashboard?message=${encodeURIComponent(res.message || "Enrolled successfully!")}`);
         }
     }
 
-    // 3. Fallback: Render Tutor Selection UI when no tutor_id is provided
+    // 3. Fallback: Fetch student record & populated tutor groups for selection UI
     let currentStudentId: string | null = null;
-    if (currentUser?.role === "student") {
-        const student = await Student.findOne({ user: currentUser.id }).lean();
-        if (student) currentStudentId = student._id.toString();
+    const student = await Student.findOne({ user: currentUser.id }).lean();
+    if (student) {
+        currentStudentId = student._id.toString();
     }
 
-    const tutors = await Tutor.find().populate("user", "name email").lean();
-    const allSchedules = await Schedule.find({}).lean();
+    // Populate both sibling references ('tutor' with nested 'user', and 'schedules')
+    const tutorGroups = await TutorGroup.find({ isActive: true })
+        .populate({
+            path: "tutor",
+            populate: {
+                path: "user",
+                select: "name email avatar",
+            },
+        })
+        .populate("schedules")
+        .lean();
 
     return (
         <div className="max-w-5xl mx-auto p-6 space-y-8">
@@ -78,37 +84,42 @@ export default async function EnrollPage({ searchParams }: PageProps) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {tutors.map((tutor: any) => {
-                    const tutorIdStr = tutor._id.toString();
-                    // // console.log("tutorIdStr", tutorIdStr)
-                    const tutorSchedules = allSchedules.filter(
-                        (s) => s.tutor.toString() === tutorIdStr
-                    );
+                {tutorGroups.map((tutorGroup: any) => {
+                    const tutor = tutorGroup.tutor;
+                    const tutorIdStr = tutor?._id ? tutor._id.toString() : "";
+                    const groupSchedules = tutorGroup.schedules || [];
 
-                    const uniqueStudentIds = new Set<string>();
-                    tutorSchedules.forEach((s) => {
-                        s.students?.forEach((stId: any) => uniqueStudentIds.add(stId.toString()));
-                    });
+                    // Retrieve enrolled students directly from tutorGroup
+                    const enrolledStudents = tutorGroup.students || [];
+                    const totalEnrolled = enrolledStudents.length;
 
-                    const totalEnrolled = uniqueStudentIds.size;
-                    const maxCapacity = tutor.maximumStudents || 5;
+                    // Capacity calculation
+                    const maxCapacity = tutorGroup.rules?.maxCapacity || 5;
                     const isFilled = totalEnrolled >= maxCapacity;
-                    const isAlreadyEnrolled = currentStudentId ? uniqueStudentIds.has(currentStudentId) : false;
+
+                    // Enrollment check
+                    const isAlreadyEnrolled = currentStudentId
+                        ? enrolledStudents.some(
+                            (st: any) => (st._id ? st._id.toString() : st.toString()) === currentStudentId
+                        )
+                        : false;
 
                     return (
                         <div
-                            key={tutorIdStr}
+                            key={tutorGroup._id.toString()}
                             className="border rounded-xl p-6 bg-white shadow-sm flex flex-col justify-between space-y-5 hover:border-emerald-300 transition"
                         >
                             <div className="space-y-4">
+                                {/* Header Info */}
                                 <div className="flex justify-between items-start border-b pb-3">
                                     <div>
                                         <h2 className="font-bold text-lg text-gray-900">
-                                            {tutor.user?.name
-                                                ? `${tutor.gender === "female" ? "Ustadhah" : "Ustadh"} ${tutor.user.name.split(" ")[1] || tutor.user.name}`
+                                            {tutor?.user?.name
+                                                ? `${tutor.gender === "female" ? "Ustadhah" : "Ustadh"} ${tutor.user.name.split(" ")[1] || tutor.user.name
+                                                }`
                                                 : "Qur'an Tutor"}
                                         </h2>
-                                        <p className="text-xs text-gray-500">{tutor.bio}</p>
+                                        <p className="text-xs text-gray-500">{tutor?.bio}</p>
                                     </div>
                                     <span
                                         className={`text-xs px-2.5 py-1 rounded-full font-bold ${isFilled
@@ -120,13 +131,14 @@ export default async function EnrollPage({ searchParams }: PageProps) {
                                     </span>
                                 </div>
 
+                                {/* Timetable Section */}
                                 <div className="space-y-2">
                                     <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                         Weekly Class Timetable
                                     </h4>
-                                    {tutorSchedules.length > 0 ? (
+                                    {groupSchedules.length > 0 ? (
                                         <div className="space-y-1.5">
-                                            {tutorSchedules.map((slot: any) => (
+                                            {groupSchedules.map((slot: any) => (
                                                 <div
                                                     key={slot._id.toString()}
                                                     className="flex justify-between items-center bg-gray-50 p-2.5 rounded-lg border text-xs"
@@ -150,6 +162,7 @@ export default async function EnrollPage({ searchParams }: PageProps) {
                                 </div>
                             </div>
 
+                            {/* Action Button */}
                             <EnrollTutorButton
                                 tutorId={tutorIdStr}
                                 isFilled={isFilled}

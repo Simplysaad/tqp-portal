@@ -30,6 +30,7 @@ function RegisterForm() {
         password: "",
         role: "student",
         isActive: true,
+        isOnboarded: false
     });
 
     const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : "/login";

@@ -1,11 +1,10 @@
-// adminDashboard.tsx
-
 import connectDB from "@/lib/db";
 import Student from "@/models/student.model";
 import Tutor from "@/models/tutor.model";
 import Schedule from "@/models/schedule.model";
 import Session from "@/models/session.model";
 import Goal from "@/models/goal.model";
+import TutorGroup from "@/models/tutorGroup.model";
 import Link from "next/link";
 
 interface AdminDashboardProps {
@@ -17,18 +16,21 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
 
     // 1. Parallel execution for high-level counts and global analytics
     const [
+        tutorGroupCount,
         totalStudents,
         activeStudents,
         atRiskStudents,
         inactiveStudents,
         totalTutors,
         activeSchedulesCount,
-        allSchedules,
+        allTutorGroups,
         allTutors,
         attendanceStats,
         goalStats,
         recentSessions,
     ] = await Promise.all([
+        TutorGroup.countDocuments({ isActive: true }),
+
         Student.countDocuments(),
         Student.countDocuments({ status: "active" }),
         Student.countDocuments({ status: "at risk" }),
@@ -36,10 +38,10 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
         Tutor.countDocuments({ isActive: true }),
         Schedule.countDocuments({ status: "active" }),
 
-        // Fetch schedules to compute assigned students set
-        Schedule.find({}, "students tutor").lean(),
+        // Fetch tutor groups to compute assigned students set and tutor loads
+        TutorGroup.find({ isActive: true }, "students tutor rules").lean(),
 
-        // Fetch tutors to compute capacity utilization
+        // Fetch active tutors to compute capacity utilization
         Tutor.find({ isActive: true }, "_id maximumStudents user")
             .populate({ path: "user", select: "name" })
             .lean(),
@@ -75,15 +77,15 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
             .lean(),
     ]);
 
-
-    // // console.log("allSchedules", allSchedules)
     // 2. Identify Unassigned Students Efficiently
-    // Extract set of all student ObjectIds assigned to any schedule
-    const assignedStudentIds = new Set(
-        allSchedules.flatMap((s: any) => (s.students || []).map((id: any) => id.toString()))
+    // Extract set of all student ObjectIds assigned to any TutorGroup
+    const assignedStudentIds = new Set<string>(
+        allTutorGroups.flatMap((group: any) =>
+            (group.students || []).map((id: any) => id.toString())
+        )
     );
 
-    // Query students who are active/at-risk but NOT present in assignedStudentIds
+    // Query students who are active/at-risk but NOT present in any TutorGroup
     const unassignedStudents = await Student.find({
         _id: { $nin: Array.from(assignedStudentIds) },
         status: { $ne: "inactive" },
@@ -97,31 +99,26 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
         status: { $ne: "inactive" },
     });
 
-    // 3. Compute Tutor Capacity & Allocation Load
-    // Count assigned students per tutor from schedules
+    // 3. Compute Tutor Capacity & Allocation Load from TutorGroups
     const tutorLoadMap: Record<string, number> = {};
 
-    for (const schedule of allSchedules) {
-        const tutorIdStr = schedule.tutor?.toString();
-        const studentCount = schedule.students?.length || 0;
-
+    for (const group of allTutorGroups) {
+        const tutorIdStr = group.tutor?.toString();
+        const studentCount = group.students?.length || 0;
 
         if (tutorIdStr) {
-            tutorLoadMap[tutorIdStr] = Math.max(
-                tutorLoadMap[tutorIdStr] || 0,
-                studentCount
-            );
+            tutorLoadMap[tutorIdStr] = (tutorLoadMap[tutorIdStr] || 0) + studentCount;
         }
     }
 
     let totalCapacity = 0;
     let totalAssignedSeats = 0;
+
     const tutorUtilizationList = allTutors.map((tutor: any) => {
         const capacity = tutor.maximumStudents || 5;
         const currentAssigned = tutorLoadMap[tutor._id.toString()] || 0;
         totalCapacity += capacity;
         totalAssignedSeats += currentAssigned;
-
 
         return {
             id: tutor._id.toString(),
@@ -133,21 +130,29 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
     });
 
     // 4. Compute Attendance Percentage
-    const totalSessionsLogged = attendanceStats.reduce((acc, curr) => acc + curr.count, 0);
-    const presentCount = attendanceStats.find((s) => s._id === "present")?.count || 0;
-    const globalAttendanceRate = totalSessionsLogged > 0
-        ? Math.round((presentCount / totalSessionsLogged) * 100)
-        : 0;
+    const totalSessionsLogged = attendanceStats.reduce(
+        (acc, curr) => acc + curr.count,
+        0
+    );
+    const presentCount =
+        attendanceStats.find((s) => s._id === "present")?.count || 0;
+    const globalAttendanceRate =
+        totalSessionsLogged > 0
+            ? Math.round((presentCount / totalSessionsLogged) * 100)
+            : 0;
 
     // 5. Compute Goal Progress Average
-    const avgGoalProgress = goalStats.length > 0 ? Math.round(goalStats[0].avgProgress) : 0;
+    const avgGoalProgress =
+        goalStats.length > 0 ? Math.round(goalStats[0].avgProgress) : 0;
 
     return (
         <div className="p-6 space-y-6 max-w-6xl mx-auto">
             {/* Header */}
             <div className="flex justify-between items-center border-b pb-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Program Overview (Coordinator)</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        Program Overview (Coordinator)
+                    </h1>
                     <p className="text-gray-500 text-sm">TQP Platform Central Command</p>
                 </div>
                 <div className="flex gap-2">
@@ -163,23 +168,35 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
             {/* 1. Core Health KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-4 border rounded-lg bg-white shadow-sm space-y-1">
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase">Total Students</h3>
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase">
+                        Total Students
+                    </h3>
                     <p className="text-2xl font-bold text-gray-900">{totalStudents}</p>
                 </div>
 
                 <div className="p-4 border rounded-lg bg-emerald-50 border-emerald-200 space-y-1">
-                    <h3 className="text-xs font-semibold text-emerald-700 uppercase">On Track 🟢</h3>
-                    <p className="text-2xl font-bold text-emerald-800">{activeStudents}</p>
+                    <h3 className="text-xs font-semibold text-emerald-700 uppercase">
+                        On Track 🟢
+                    </h3>
+                    <p className="text-2xl font-bold text-emerald-800">
+                        {activeStudents}
+                    </p>
                 </div>
 
                 <div className="p-4 border rounded-lg bg-amber-50 border-amber-200 space-y-1">
-                    <h3 className="text-xs font-semibold text-amber-700 uppercase">At Risk 🟡</h3>
+                    <h3 className="text-xs font-semibold text-amber-700 uppercase">
+                        At Risk 🟡
+                    </h3>
                     <p className="text-2xl font-bold text-amber-800">{atRiskStudents}</p>
                 </div>
 
                 <div className="p-4 border rounded-lg bg-rose-50 border-rose-200 space-y-1">
-                    <h3 className="text-xs font-semibold text-rose-700 uppercase">Inactive 🔴</h3>
-                    <p className="text-2xl font-bold text-rose-800">{inactiveStudents}</p>
+                    <h3 className="text-xs font-semibold text-rose-700 uppercase">
+                        Inactive 🔴
+                    </h3>
+                    <p className="text-2xl font-bold text-rose-800 font-mono">
+                        {inactiveStudents}
+                    </p>
                 </div>
             </div>
 
@@ -187,38 +204,57 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Active Live Classes */}
                 <div className="p-4 border rounded-lg bg-white shadow-sm space-y-1">
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase">Live Classes Right Now</h3>
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase">
+                        Active Groups
+                    </h3>
                     <p className="text-2xl font-bold text-emerald-600 flex items-center gap-2">
-                        {activeSchedulesCount > 0 && <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping" />}
-                        {activeSchedulesCount} Active
+                        {tutorGroupCount > 0 && (
+                            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping" />
+                        )}
+                        {tutorGroupCount} Active Groups
                     </p>
-                    <p className="text-xs text-gray-500">Scheduled sessions online</p>
+                    <p className="text-xs text-gray-500">
+                        Across {totalTutors} active tutors
+                    </p>
                 </div>
 
                 {/* Platform Attendance Rate */}
                 <div className="p-4 border rounded-lg bg-white shadow-sm space-y-1">
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase">Platform Attendance Rate</h3>
-                    <p className="text-2xl font-bold text-gray-900">{globalAttendanceRate}%</p>
-                    <p className="text-xs text-gray-500">Across {totalSessionsLogged} recorded sessions</p>
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase">
+                        Platform Attendance Rate
+                    </h3>
+                    <p className="text-2xl font-bold text-gray-900 font-mono">
+                        {globalAttendanceRate}%
+                    </p>
+                    <p className="text-xs text-gray-500">
+                        Across {totalSessionsLogged} recorded sessions
+                    </p>
                 </div>
 
                 {/* Goal Progress Average */}
                 <div className="p-4 border rounded-lg bg-white shadow-sm space-y-1">
-                    <h3 className="text-xs font-semibold text-gray-400 uppercase">Avg Semester Progress</h3>
-                    <p className="text-2xl font-bold text-gray-900">{avgGoalProgress}%</p>
+                    <h3 className="text-xs font-semibold text-gray-400 uppercase">
+                        Avg Semester Progress
+                    </h3>
+                    <p className="text-2xl font-bold text-gray-900 font-mono">
+                        {avgGoalProgress}%
+                    </p>
                     <p className="text-xs text-gray-500">Target goal completion rate</p>
                 </div>
             </div>
 
             {/* 3. Actionable Operational Queues & Capacity */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
                 {/* Unassigned Students Queue */}
                 <div className="p-5 border rounded-xl bg-white shadow-sm space-y-4">
                     <div className="flex justify-between items-center border-b pb-3">
                         <div>
-                            <h2 className="font-bold text-gray-900">Unassigned Students Queue</h2>
-                            <p className="text-xs text-gray-500">Students awaiting schedule & Ustadh matching</p>
+                            <h2 className="font-bold text-gray-900">
+                                Unassigned Students Queue
+                            </h2>
+                            <p className="text-xs text-gray-500">
+                                Students awaiting schedule & Ustadh matching
+                            </p>
                         </div>
                         <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">
                             {totalUnassignedCount} Pending
@@ -226,15 +262,23 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
                     </div>
 
                     {unassignedStudents.length === 0 ? (
-                        <p className="text-sm text-gray-500 py-6 text-center">All active students have been assigned!</p>
+                        <p className="text-sm text-gray-500 py-6 text-center">
+                            All active students have been assigned!
+                        </p>
                     ) : (
                         <div className="divide-y divide-gray-100">
                             {unassignedStudents.map((std: any) => (
-                                <div key={std._id.toString()} className="py-3 flex justify-between items-center text-sm">
+                                <div
+                                    key={std._id.toString()}
+                                    className="py-3 flex justify-between items-center text-sm"
+                                >
                                     <div>
-                                        <p className="font-medium text-gray-900">{std.user?.name || "New Student"}</p>
+                                        <p className="font-medium text-gray-900">
+                                            {std.user?.name || "New Student"}
+                                        </p>
                                         <p className="text-xs text-gray-400">
-                                            {std.gender} &bull; {std.department || "No Dept"} &bull; Juz {std.currentMemorization?.juz || 1}
+                                            {std.gender} &bull; {std.department || "No Dept"} &bull;
+                                            Juz {std.currentMemorization?.juz || 1}
                                         </p>
                                     </div>
                                     <Link
@@ -250,7 +294,10 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
 
                     {totalUnassignedCount > 5 && (
                         <div className="pt-2 text-center border-t">
-                            <Link href="/admin/assignments" className="text-xs font-medium text-emerald-700 hover:underline">
+                            <Link
+                                href="/admin/assignments"
+                                className="text-xs font-medium text-emerald-700 hover:underline"
+                            >
                                 View all {totalUnassignedCount} unassigned students &rarr;
                             </Link>
                         </div>
@@ -261,23 +308,32 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
                 <div className="p-5 border rounded-xl bg-white shadow-sm space-y-4">
                     <div className="flex justify-between items-center border-b pb-3">
                         <div>
-                            <h2 className="font-bold text-gray-900">Tutor Utilization & Capacity</h2>
-                            <p className="text-xs text-gray-500">Allocated seats vs maximum capacity</p>
+                            <h2 className="font-bold text-gray-900">
+                                Tutor Utilization & Capacity
+                            </h2>
+                            <p className="text-xs text-gray-500">
+                                Allocated seats vs maximum capacity
+                            </p>
                         </div>
-                        <span className="text-xs font-medium text-gray-500">
+                        <span className="text-xs font-medium text-gray-500 font-mono">
                             {totalAssignedSeats} / {totalCapacity} Seats Filled
                         </span>
                     </div>
 
                     <div className="space-y-3 max-h-64 overflow-y-auto pr-1 divide-y divide-gray-50">
                         {tutorUtilizationList.map((tutor) => {
-                            const percentage = Math.round((tutor.assigned / tutor.capacity) * 100);
+                            const percentage = Math.round(
+                                (tutor.assigned / tutor.capacity) * 100
+                            );
                             return (
                                 <div key={tutor.id} className="pt-2 first:pt-0 space-y-1">
                                     <div className="flex justify-between text-sm">
-                                        <span className="font-medium text-gray-800">{tutor.name}</span>
-                                        <span className="text-xs text-gray-500">
-                                            {tutor.assigned}/{tutor.capacity} ({tutor.availableSlots} open)
+                                        <span className="font-medium text-gray-800">
+                                            {tutor.name}
+                                        </span>
+                                        <span className="text-xs text-gray-500 font-mono">
+                                            {tutor.assigned}/{tutor.capacity} ({tutor.availableSlots}{" "}
+                                            open)
                                         </span>
                                     </div>
                                     <div className="w-full bg-gray-100 rounded-full h-2">
@@ -288,7 +344,9 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
                                                     ? "bg-amber-500"
                                                     : "bg-emerald-500"
                                                 }`}
-                                            style={{ width: `${Math.min(100, percentage)}%` }}
+                                            style={{
+                                                width: `${Math.min(100, percentage)}%`,
+                                            }}
                                         />
                                     </div>
                                 </div>
@@ -296,23 +354,31 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
                         })}
                     </div>
                 </div>
-
             </div>
 
             {/* 4. Recent Session Audit Feed */}
             <div className="p-5 border rounded-xl bg-white shadow-sm space-y-4">
                 <div className="flex justify-between items-center border-b pb-3">
                     <div>
-                        <h2 className="font-bold text-gray-900">Recent Session Logs Audit</h2>
-                        <p className="text-xs text-gray-500">Real-time attendance and progress reports logged by tutors</p>
+                        <h2 className="font-bold text-gray-900">
+                            Recent Session Logs Audit
+                        </h2>
+                        <p className="text-xs text-gray-500">
+                            Real-time attendance and progress reports logged by tutors
+                        </p>
                     </div>
-                    <Link href="/admin/sessions" className="text-xs font-medium text-emerald-700 hover:underline">
+                    <Link
+                        href="/admin/sessions"
+                        className="text-xs font-medium text-emerald-700 hover:underline"
+                    >
                         View All Audit Logs &rarr;
                     </Link>
                 </div>
 
                 {recentSessions.length === 0 ? (
-                    <p className="text-sm text-gray-500 py-6 text-center">No session logs submitted yet.</p>
+                    <p className="text-sm text-gray-500 py-6 text-center">
+                        No session logs submitted yet.
+                    </p>
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-sm text-gray-600">
@@ -328,7 +394,7 @@ export default async function AdminDashboard({ userId }: AdminDashboardProps) {
                             <tbody className="divide-y divide-gray-100">
                                 {recentSessions.map((sess: any) => (
                                     <tr key={sess._id.toString()} className="hover:bg-gray-50">
-                                        <td className="py-2.5 px-3 text-xs text-gray-500">
+                                        <td className="py-2.5 px-3 text-xs text-gray-500 font-mono">
                                             {new Date(sess.date).toLocaleDateString("en-GB", {
                                                 day: "numeric",
                                                 month: "short",

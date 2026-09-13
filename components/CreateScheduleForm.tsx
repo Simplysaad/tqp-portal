@@ -32,6 +32,8 @@ export default function CreateScheduleForm({ onSuccess, onCancel }: CreateSchedu
         const res = await createSchedule({
             dayOfWeek: dayOfWeek as any,
             startTime,
+            startTimeStr,
+            endTimeStr,
             endTime,
             mode: "online",
             googleMeetLink,

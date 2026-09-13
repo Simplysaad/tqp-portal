@@ -10,7 +10,7 @@ export interface ScheduleData {
     startTime: number; // minutes from 00:00
     endTime: number;   // minutes from 00:00
     googleMeetLink?: string;
-    mode?: "online" | "onsite";
+    mode?: "online" | "physical";
 }
 
 interface EditScheduleFormProps {
