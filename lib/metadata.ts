@@ -8,7 +8,7 @@ interface GenerateMetadataOptions {
     type?: "website" | "article";
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://tqp.mssnoau.org";
+const BASE_URL = process.env.BASE_URL || "https://tqp.mssnoau.org";
 const DEFAULT_OG_IMAGE = "/og-image.png"; // Stored in /public/og-image.png (1200x630)
 const SITE_NAME = "TQP Structured Learning Management System";
 
