@@ -10,6 +10,7 @@ import Types from "mongoose";
 import TutorGroup from "@/models/tutorGroup.model";
 
 
+
 export async function enrollWithTutor(tutorId: string) {
     try {
         const currentUser = await getSession();
@@ -32,43 +33,88 @@ export async function enrollWithTutor(tutorId: string) {
 
         await connectDB();
 
-        // 1. Fetch Student profile
-        const student = await Student.findOne({ user: currentUser.id });
+        // 1. Fetch Student profile & Tutor Group concurrently
+        const [student, tutorGroup] = await Promise.all([
+            Student.findOne({ user: currentUser.id }),
+            TutorGroup.findOne({ tutor: tutorId, isActive: true }),
+        ]);
+
         if (!student) {
             return { success: false, error: "Student profile not found." };
         }
 
+        if (!tutorGroup) {
+            return {
+                success: false,
+                error: "This tutor does not have an active group available for enrollment.",
+            };
+        }
+
         const studentId = student._id;
 
-
-        // 2. Prevent multi-group enrollments
+        // 2. Prevent multi-group enrollments across all active groups
         const existingEnrollment = await TutorGroup.findOne({
             students: studentId,
             isActive: true,
         });
 
         if (existingEnrollment) {
+            if (existingEnrollment.tutor.toString() === tutorId) {
+                return {
+                    success: false,
+                    error: "You are already enrolled with this tutor.",
+                };
+            }
             return {
                 success: false,
-                error: "You are already enrolled with a tutor. Unenroll first to change tutors.",
+                error: "You are already enrolled in another group. Unenroll first to change tutors.",
             };
         }
 
-        // 3. Verify target tutor exists
-        const tutor = await Tutor.findById(tutorId);
-        if (!tutor) {
-            return { success: false, error: "Tutor not found." };
+        // 3. Rule Check: Maximum Capacity
+        const currentCount = tutorGroup.students.length;
+        const maxCapacity = tutorGroup.rules?.maxCapacity ?? 5;
+
+        if (currentCount >= maxCapacity) {
+            return {
+                success: false,
+                error: "This tutor's group has reached its maximum capacity.",
+            };
         }
 
-        // 4. Atomic check & enroll operation
-        // Finds active group for target tutor WHERE student count < maxCapacity
+        // 4. Rule Check: Gender Restriction (Female Only)
+        if (tutorGroup.rules?.femaleOnly) {
+            const isFemale = student.gender?.toLowerCase() === "female";
+            if (!isFemale) {
+                return {
+                    success: false,
+                    error: "This group is restricted to female students only.",
+                };
+            }
+        }
+
+        // 5. Rule Check: Memorization Range Compliance
+        const groupRange = tutorGroup.rules?.memorizationRange;
+        const studentJuz = student.currentMemorization?.juz;
+
+        if (groupRange?.start?.juz && groupRange?.end?.juz && studentJuz) {
+            const minJuz = Math.min(groupRange.start.juz, groupRange.end.juz);
+            const maxJuz = Math.max(groupRange.start.juz, groupRange.end.juz);
+
+            if (studentJuz < minJuz || studentJuz > maxJuz) {
+                return {
+                    success: false,
+                    error: `Your memorization level (Juz ${studentJuz}) falls outside this group's required range (Juz ${minJuz}–${maxJuz}).`,
+                };
+            }
+        }
+
+        // 6. Atomic Assignment (Prevents concurrency race conditions)
         const updatedGroup = await TutorGroup.findOneAndUpdate(
             {
-                tutor: tutorId,
-                isActive: true,
-                $expr: {
-                    $lt: [{ $size: "$students" }, "$rules.maxCapacity"],
-                },
+                _id: tutorGroup._id,
+                students: { $ne: studentId },
+                $expr: { $lt: [{ $size: "$students" }, maxCapacity] },
             },
             {
                 $addToSet: { students: studentId },
@@ -77,26 +123,31 @@ export async function enrollWithTutor(tutorId: string) {
         );
 
         if (!updatedGroup) {
-            // Determine exact failure reason for clear feedback
-            const activeGroup = await TutorGroup.findOne({ tutor: tutorId, isActive: true });
-            if (!activeGroup) {
-                return {
-                    success: false,
-                    error: "This tutor does not have any active class available for enrollment.",
-                };
-            }
-            return { success: false, error: "This tutor's class is already filled up." };
+            return {
+                success: false,
+                error: "Enrollment failed due to a concurrent update or full group capacity.",
+            };
         }
+
+        // 7. Update Student record to point to this tutor
+        await Student.updateOne(
+            { _id: studentId },
+            { $set: { tutor: tutorId } }
+        );
+
+        // 8. Revalidate student & schedule routes
+        revalidatePath("/dashboard");
+        revalidatePath("/schedules");
 
         return {
             success: true,
             message: "Successfully enrolled! You have inherited all of this tutor's schedules.",
         };
-    } catch (error) {
+    } catch (error: any) {
         console.error("Enrollment failed:", error);
         return {
             success: false,
-            error: "An unexpected error occurred during enrollment.",
+            error: error.message || "An unexpected error occurred during enrollment.",
         };
     }
 }
