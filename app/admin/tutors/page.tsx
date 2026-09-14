@@ -3,8 +3,15 @@ import connectDB from "@/lib/db";
 import Tutor from "@/models/tutor.model";
 import TutorGroup from "@/models/tutorGroup.model";
 import { UserCheck } from "lucide-react";
+import { generateOSFAMetadata } from "@/lib/metadata";
 
 export const revalidate = 0;
+
+export const metadata = generateOSFAMetadata({
+    path: "/admin/tutors",
+    title: "Tutor Directory | TQP Admin",
+    description: "View all active tutors, assigned groups, and student allocations.",
+})
 
 export default async function TutorsDirectoryPage() {
     await connectDB();

@@ -11,11 +11,21 @@ import {
     Video,
     ArrowRight,
     GraduationCap,
-    ChevronRight,
 } from "lucide-react";
 
-import { Resend } from 'resend';
+import { Metadata } from "next";
+import { generateOSFAMetadata } from "@/lib/metadata";
+
+
+export const metadata: Metadata = generateOSFAMetadata({
+    path: "/landing",
+    title: "Welcome | TQP Structured Learning Management System",
+    description: "Discover the TQP program, explore group learning structures, and manage your Qur'an memorisation journey.",
+})
+
+
 export default function LandingPage() {
+
 
     return (
         <div className="min-h-screen bg-[#FBFBF9] text-gray-900 selection:bg-amber-100 selection:text-amber-900 font-sans antialiased">

@@ -2,18 +2,29 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import connectDB from "@/lib/db";
 import TutorGroup from "@/models/tutorGroup.model";
-import Student from "@/models/student.model";
-import { Users, ArrowLeft, ShieldAlert } from "lucide-react";
+import { Users, ArrowLeft } from "lucide-react";
+import { generateOSFAMetadata } from "@/lib/metadata";
 
 export const revalidate = 0;
+
+export async function generateMetadata({ params }: { params: any }) {
+
+    const { id } = await params;
+
+    return generateOSFAMetadata({
+        path: `/admin/groups/${id}`,
+        title: "Manage Tutor Group | TQP Admin",
+        description: "Edit group rules, reassign students, update capacity, and manage complete circle rosters.",
+    })
+}
 
 export default async function TutorGroupDetailPage({ params }: { params: { id: string } }) {
     await connectDB();
 
     const { id } = await params
     const group = await TutorGroup.findById(id)
-        // .populate({ path: "tutor", populate: { path: "user", select: "name email" } })
-        // .populate({ path: "students", populate: { path: "user", select: "name email" } })
+        .populate({ path: "tutor", populate: { path: "user", select: "name email" } })
+        .populate({ path: "students", populate: { path: "user", select: "name email" } })
         .lean();
 
     if (!group) notFound();

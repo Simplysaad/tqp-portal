@@ -12,7 +12,7 @@ interface AdminLayoutProps {
 export default async function AdminLayout({ children }: AdminLayoutProps) {
     await connectDB();
 
-    const user: IUser | null = await getSession();
+    const user = (await getSession()) as IUser | null;
 
     if (!user || user.role?.toLowerCase() !== "admin") {
         redirect("/dashboard");

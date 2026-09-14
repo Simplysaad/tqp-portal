@@ -22,6 +22,16 @@ import {
     Building2,
 } from "lucide-react";
 
+
+import type { Metadata } from "next";
+import { generateOSFAMetadata } from "@/lib/metadata";
+
+export const metadata: Metadata = generateOSFAMetadata({
+    title: "TQP Structured Learning Management System",
+    description: "Access structured Qur'an memorisation tracking, tutor group assignments, and learning circle schedules.",
+    path: "/"
+})
+
 export default function LandingPage() {
     return (
         <div className="min-h-screen bg-[#FBFBF9] text-gray-900 selection:bg-amber-100 selection:text-amber-900 font-sans antialiased">

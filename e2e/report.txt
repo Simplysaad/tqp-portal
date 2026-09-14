@@ -1,91 +1,246 @@
-==============================================================================
-  TQP ATTENDANCE SYSTEM — END-TO-END INTEGRATION TEST REPORT
-==============================================================================
-  Target        : http://localhost:3000
-  Run at        : 2026-09-10T20:47:56.137Z
-  Browser       : Chromium (Playwright, headless)
-  Signup flow   : ENABLED — creates a real student account
+┌ ○ / (Root / Landing redirect)
+├ ○ /landing
+├ ○ /login
+├ ○ /register
+├ ƒ /onboarding
+├ ƒ /enroll
+├ ƒ /enroll/[tutorId]
+├ ƒ /join/[id]
+├ ƒ /dashboard
+├ ƒ /dashboard/sessions/[id]
+├ ƒ /admin/dashboard
+├ ƒ /admin/assignments
+├ ƒ /admin/assignments/batch
+├ ƒ /admin/groups
+├ ƒ /admin/groups/[id]
+├ ƒ /admin/students
+├ ƒ /admin/students/[id]
+├ ƒ /admin/tutors
+└ ƒ /admin/tutors/[id]
 
-  RESULT        : PASS — no failures
-  Totals        : 18 checks → 16 passed, 2 warnings, 0 failed
 
-------------------------------------------------------------------------------
-  PAGE LOAD / ROUTE SMOKE TESTS
-------------------------------------------------------------------------------
-  [PASS] Landing page  (/)
-         - HTTP 200 · final: http://localhost:3000/ · text length: 2379
-  [PASS] Login page  (/login)
-         - HTTP 200 · final: http://localhost:3000/login · text length: 247
-  [PASS] Register page  (/register)
-         - HTTP 200 · final: http://localhost:3000/register · text length: 335
-  [PASS] Enroll  (/enroll) → expects redirect to /login
-         - HTTP 200 · final: http://localhost:3000/login?next=%2Fenroll
-         - Correctly redirected unauthenticated user to /login
-  [PASS] Dashboard  (/dashboard) → expects redirect to /login
-         - HTTP 200 · final: http://localhost:3000/login
-         - Correctly redirected unauthenticated user to /login
-  [PASS] Admin  (/admin) → expects redirect to /login
-         - HTTP 200 · final: http://localhost:3000/login
-         - Correctly redirected unauthenticated user to /login
-  [PASS] Onboarding  (/onboarding) → expects redirect to /login
-         - HTTP 200 · final: http://localhost:3000/login
-         - Correctly redirected unauthenticated user to /login
 
-------------------------------------------------------------------------------
-  NAVIGATION FLOWS (link clicks)
-------------------------------------------------------------------------------
-  [PASS] Landing → click 'Sign In' → /login
-         - final: http://localhost:3000/login
-  [PASS] Landing → click 'Enroll with a Tutor Now' → /enroll → /login redirect
-         - final: http://localhost:3000/login?next=%2Fenroll
-  [PASS] Login → click 'Register Here' → /register
-         - final: http://localhost:3000/register
-  [PASS] Register → click 'Sign In Here' → /login
-         - final: http://localhost:3000/login
+Since your app is built using Next.js (App Router), you don't actually need external packages like `react-helmet` or `helmet`. Next.js has a built-in, native **Metadata API** (`export const metadata` or `generateMetadata`) that dynamically injects standard HTML `<title>`, `<meta>`, and OpenGraph/Twitter tags right on the server.
 
-------------------------------------------------------------------------------
-  FORM INTERACTION FLOWS
-------------------------------------------------------------------------------
-  [PASS] Login form — submit invalid credentials (read-only)
-         - final: http://localhost:3000/login
-         - Alert shown: "Invalid email or password"
+Here is a flexible boilerplate template you can reuse across static and dynamic pages, followed by a tailored title and description dictionary for all your routes.
 
-------------------------------------------------------------------------------
-  LINKED ROUTE REACHABILITY (broken-link check)
-------------------------------------------------------------------------------
-  (none)
+---
 
-------------------------------------------------------------------------------
-  PROTECTED ROUTES (AUTHENTICATED SESSION CHECKS)
-------------------------------------------------------------------------------
-  [PASS] [Student] Student Dashboard (/dashboard)
-         - HTTP 200 · final: http://localhost:3000/onboarding
-  [PASS] [Student] Student Enrollment (/enroll)
-         - HTTP 200 · final: http://localhost:3000/enroll
-  [WARN] [Student] Student Profile (/profile)
-         - HTTP 404 · final: http://localhost:3000/profile
-         - Expected text matching /Profile|Settings|Account/i not found
-  [PASS] [Tutor] Tutor Dashboard (/dashboard)
-         - HTTP 200 · final: http://localhost:3000/dashboard
-  [PASS] [Tutor] Mark Attendance (/attendance)
-         - HTTP 404 · final: http://localhost:3000/attendance
-  [WARN] [Tutor] Tutor Profile (/profile)
-         - HTTP 404 · final: http://localhost:3000/profile
-         - Expected text matching /Profile|Settings/i not found
+### Standard Next.js Metadata Boilerplate Template
 
-------------------------------------------------------------------------------
-  CONSOLE / PAGE ERRORS
-------------------------------------------------------------------------------
-  (none captured — excludes benign console.log and resource-404 noise)
+#### 1. Static Routes Template (`page.tsx` or `layout.tsx`)
 
-------------------------------------------------------------------------------
-  NETWORK ERRORS & HTTP >=400 RESPONSES (deduplicated)
-------------------------------------------------------------------------------
-  • HTTP 404 GET http://localhost:3000/profile
-  • HTTP 404 POST http://localhost:3000/profile
-  • HTTP 404 GET http://localhost:3000/attendance
-  • HTTP 404 POST http://localhost:3000/attendance
+For static routes (e.g., `/landing`, `/login`, `/admin/dashboard`):
 
-==============================================================================
-  END OF REPORT — SUITE PASSED
-==============================================================================
+```tsx
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Page Title | TQP Portal",
+    description: "A clear, concise 1-2 sentence description of what this page does.",
+    openGraph: {
+        title: "Page Title | TQP Portal",
+        description: "A clear, concise 1-2 sentence description of what this page does.",
+        url: "https://tqp.mssnoau.org/your-route-path",
+        siteName: "TQP Attendance & Learning Portal",
+        type: "website",
+        images: [
+            {
+                url: "/og-image.png", // Recommended: 1200x630px image in your /public folder
+                width: 1200,
+                height: 630,
+                alt: "TQP Portal Preview",
+            },
+        ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Page Title | TQP Portal",
+        description: "A clear, concise 1-2 sentence description of what this page does.",
+        images: ["/og-image.png"],
+    },
+};
+
+export default function Page() {
+    return <div>...</div>;
+}
+
+```
+
+#### 2. Dynamic Routes Template (`generateMetadata` in `page.tsx`)
+
+For dynamic routes with params (e.g., `/enroll/[tutorId]`, `/admin/students/[id]`):
+
+```tsx
+import type { Metadata } from "next";
+
+interface Props {
+    params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+    const { id } = await params;
+    
+    // Fetch resource details dynamically (e.g., tutor or student name)
+    // const item = await getItem(id);
+
+    const title = `Details for Item #${id} | TQP Portal`;
+    const description = `View attendance records, schedules, and profile updates for item #${id}.`;
+
+    return {
+        title,
+        description,
+        openGraph: {
+            title,
+            description,
+            type: "website",
+        },
+        twitter: {
+            card: "summary_large_image",
+            title,
+            description,
+        },
+    };
+}
+
+```
+
+---
+
+### Route Metadata Dictionary
+
+Here is your updated metadata dictionary fully aligned with **TQP Structured Learning Management System**:
+
+### Public & Auth Routes
+
+export interface RouteMetadataConfig {
+    path: string;
+    title: string;
+    description: string;
+    isDynamic?: boolean;
+}
+
+
+
+export const routesMetadata: RouteMetadataConfig[] = [
+    // --- Public & Auth Routes ---
+    {
+        path: "/",
+        title: "TQP Structured Learning Management System",
+        description: "Access structured Qur'an memorisation tracking, tutor group assignments, and learning circle schedules.",
+    },
+    {
+        path: "/landing",
+        title: "Welcome | TQP Structured Learning Management System",
+        description: "Discover the TQP program, explore group learning structures, and manage your Qur'an memorisation journey.",
+    },
+
+import { generateOSFAMetadata } from "@/lib/metadata";
+export const metadata: Metadata = generateOSFAMetadata()
+    {
+        path: "/login",
+        title: "Sign In | TQP System",
+        description: "Log in to your TQP portal account to access your dashboard, schedules, and learning groups.",
+    },
+
+
+
+    {
+        path: "/register",
+        title: "Create Account | TQP System",
+        description: "Register for the TQP program to begin your structured memorisation journey and connect with assigned tutors.",
+    },
+    {
+        path: "/onboarding",
+        title: "Complete Onboarding | TQP System",
+        description: "Complete your profile setup, select your gender, and set your initial memorisation level for group placement.",
+    },
+
+    // --- Student & Tutor Dashboard Routes ---
+
+
+
+    {
+        path: "/enroll",
+        title: "Enroll in Tutor Group | TQP System",
+        description: "Explore available study circles, check capacity rules, and join your assigned learning group.",
+    },
+    {
+        path: "/enroll/[tutorId]",
+        title: "Group Details & Enrollment | TQP System",
+        description: "Review tutor availability, memorisation targets, and circle guidelines before confirming enrollment.",
+        isDynamic: true,
+    },
+
+
+            import { generateOSFAMetadata } from "@/lib/metadata";
+    import { Metadata } from "next";
+export const metadata: Metadata = generateOSFAMetadata()
+    {
+        path: "/join/[id]",
+        title: "Join Group Invitation | TQP System",
+        description: "Accept your invitation link to join your assigned TQP study circle.",
+        isDynamic: true,
+    },
+    {
+        path: "/dashboard",
+        title: "Learning & Progress Dashboard | TQP System",
+        description: "Monitor memorisation goals, review session updates, and track your ongoing learning progress.",
+    },
+    {
+        path: "/dashboard/sessions/[id]",
+        title: "Session Overview & Records | TQP System",
+        description: "View session logs, memorisation targets, and group notes for this specific class session.",
+        isDynamic: true,
+    },
+
+    // --- Admin Management Routes ---
+    {
+        path: "/admin/dashboard",
+        title: "Admin Dashboard | TQP Management",
+        description: "High-level platform statistics, active tutor group metrics, and ecosystem activity overview.",
+    },
+    {
+        path: "/admin/assignments",
+        title: "Manual Group Assignment | TQP Admin",
+        description: "Manage student placements, resolve pending group requests, and inspect allocation rules.",
+    },
+    {
+        path: "/admin/assignments/batch",
+        title: "Batch Auto-Assignment Engine | TQP Admin",
+        description: "Automatically match unassigned students into tutor groups according to capacity, gender restrictions, and memorisation levels.",
+    },
+    {
+        path: "/admin/groups",
+        title: "Tutor Groups Management | TQP Admin",
+        description: "Overview of all active study circles, capacity limits, and assigned tutors.",
+    },
+    {
+        path: "/admin/groups/[id]",
+        title: "Manage Tutor Group | TQP Admin",
+        description: "Edit group rules, reassign students, update capacity, and manage complete circle rosters.",
+        isDynamic: true,
+    },
+    {
+        path: "/admin/students",
+        title: "Student Directory | TQP Admin",
+        description: "Search, filter, and manage all registered students and their current learning progress.",
+    },
+    {
+        path: "/admin/students/[id]",
+        title: "Student Profile Management | TQP Admin",
+        description: "View detailed student progress, edit memorisation levels, and inspect group history.",
+        isDynamic: true,
+    },
+    {
+        path: "/admin/tutors",
+        title: "Tutor Directory | TQP Admin",
+        description: "View all active tutors, assigned groups, and student allocations.",
+    },
+    {
+        path: "/admin/tutors/[id]",
+        title: "Tutor Profile & Group Details | TQP Admin",
+        description: "Manage tutor profiles, inspect assigned learning groups, and monitor group performance.",
+        isDynamic: true,
+    },
+];

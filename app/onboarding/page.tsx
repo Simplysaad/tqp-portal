@@ -6,6 +6,15 @@ import Tutor from "@/models/tutor.model";
 import connectDB from "@/lib/db";
 import { redirect } from "next/navigation";
 
+import { generateOSFAMetadata } from "@/lib/metadata";
+import { Metadata } from "next";
+export const metadata: Metadata = generateOSFAMetadata({
+    path: "/onboarding",
+    title: "Complete Onboarding | TQP System",
+    description: "Complete your profile setup, select your gender, and set your initial memorisation level for group placement.",
+})
+
+
 const Onboarding = async () => {
     const session = await getSession();
 

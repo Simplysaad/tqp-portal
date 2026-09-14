@@ -13,6 +13,15 @@ import {
     Loader2,
 } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
+import { generateOSFAMetadata } from "@/lib/metadata";
+import { Metadata } from "next";
+
+export const metadata: Metadata = generateOSFAMetadata({
+    path: "/login",
+    title: "Sign In | TQP System",
+    description: "Log in to your TQP portal account to access your dashboard, schedules, and learning groups.",
+})
+
 
 function LoginFormContent() {
     const router = useRouter();

@@ -3,6 +3,14 @@
 import { useState, useEffect } from "react";
 import { autoAssignStudentsToTutorGroups, getUnassignedStudentIds } from "@/actions/assignment.action";
 import { Zap, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import { generateOSFAMetadata } from "@/lib/metadata";
+
+
+export const metadata = generateOSFAMetadata({
+    path: "/admin/assignments/batch",
+    title: "Batch Auto-Assignment Engine | TQP Admin",
+    description: "Automatically match unassigned students into tutor groups according to capacity, gender restrictions, and memorisation levels.",
+})
 
 export default function BatchAutoAssignPage() {
     const [studentIdsInput, setStudentIdsInput] = useState("");

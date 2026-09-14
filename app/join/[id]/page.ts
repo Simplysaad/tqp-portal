@@ -3,9 +3,20 @@ import { getSession } from "@/actions/user.action"; // Or your auth helper path
 import Student from "@/models/student.model";
 import { joinSessionViaLink } from "@/actions/session.action";
 import connectDB from "@/lib/db";
+import { generateOSFAMetadata } from "@/lib/metadata";
 
 interface JoinPageProps {
     params: Promise<{ id: string }>;
+}
+
+export async function generateMetadata({ params }: JoinPageProps) {
+    const { id } = await params;
+
+    return generateOSFAMetadata({
+        path: `/join/${id}`,
+        title: "Join Group Invitation | TQP System",
+        description: "Accept your invitation link to join your assigned TQP study circle.",
+    })
 }
 
 export default async function JoinPage({ params }: JoinPageProps) {

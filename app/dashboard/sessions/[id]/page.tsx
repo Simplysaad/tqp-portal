@@ -4,10 +4,23 @@ import { getSession } from "@/actions/user.action";
 import Session from "@/models/session.model";
 import LogProgressForm from "./StudentLogForm";
 import TutorSessionVerificationForm from "./TutorSessionVerificationForm";
+import { generateOSFAMetadata } from "@/lib/metadata";
 
 interface SessionPageProps {
     params: Promise<{ id: string }>;
 }
+
+
+export async function generateMetadata({ params }: SessionPageProps) {
+    const { id } = await params;
+
+    return generateOSFAMetadata({
+        path: `/dashboard/sessions/${id}`,
+        title: "Session Overview & Records | TQP System",
+        description: "View session logs, memorisation targets, and group notes for this specific class session.",
+    })
+}
+
 
 export default async function SessionDetailPage({ params }: SessionPageProps) {
     // 1. Authenticate user session

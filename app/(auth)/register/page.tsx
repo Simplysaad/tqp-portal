@@ -18,6 +18,15 @@ import {
 } from "lucide-react";
 import { PasswordInput } from "@/components/PasswordInput";
 
+
+import { generateOSFAMetadata } from "@/lib/metadata";
+import { Metadata } from "next";
+export const metadata: Metadata = generateOSFAMetadata({
+    path: "/register",
+    title: "Create Account | TQP System",
+    description: "Register for the TQP program to begin your structured memorisation journey and connect with assigned tutors.",
+})
+
 function RegisterForm() {
     const router = useRouter();
     const searchParams = useSearchParams();

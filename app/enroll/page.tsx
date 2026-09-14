@@ -7,6 +7,16 @@ import EnrollTutorButton from "@/components/EnrollButton";
 import { redirect } from "next/navigation";
 import { Calendar, Clock } from "lucide-react";
 
+import { generateOSFAMetadata } from "@/lib/metadata";
+import { Metadata } from "next";
+export const metadata: Metadata = generateOSFAMetadata({
+    path: "/enroll",
+    title: "Enroll with a tutor | TQP System",
+    description: "Explore available study circles, check capacity rules, and join your assigned learning group.",
+})
+
+
+
 function minutesToTime(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;

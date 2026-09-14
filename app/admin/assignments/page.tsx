@@ -3,8 +3,15 @@ import connectDB from "@/lib/db";
 import Student from "@/models/student.model";
 import TutorGroup from "@/models/tutorGroup.model";
 import { UserCheck, ShieldAlert, ArrowRight } from "lucide-react";
+import { generateOSFAMetadata } from "@/lib/metadata";
 
 export const revalidate = 0;
+
+export const metadata = generateOSFAMetadata({
+    path: "/admin/assignments",
+    title: "Manual Group Assignment | TQP Admin",
+    description: "Manage student placements, resolve pending group requests, and inspect allocation rules.",
+})
 
 export default async function AssignmentsPage() {
     await connectDB();

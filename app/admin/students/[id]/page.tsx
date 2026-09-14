@@ -4,8 +4,19 @@ import connectDB from "@/lib/db";
 import Student from "@/models/student.model";
 import TutorGroup from "@/models/tutorGroup.model";
 import { User, BookOpen, Building2, ShieldCheck, ArrowLeft } from "lucide-react";
+import { generateOSFAMetadata } from "@/lib/metadata";
 
 export const revalidate = 0;
+
+export async function generateMetadata({ params }: { params: any }) {
+    const { id } = await params
+
+    return generateOSFAMetadata({
+        path: `/admin/students/${id}`,
+        title: "Student Profile Management | TQP Admin",
+        description: "View detailed student progress, edit memorisation levels, and inspect group history.",
+    })
+}
 
 export default async function StudentDetailPage({ params }: { params: { id: string } }) {
     await connectDB();

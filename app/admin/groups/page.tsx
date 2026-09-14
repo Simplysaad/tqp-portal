@@ -2,8 +2,15 @@ import Link from "next/link";
 import connectDB from "@/lib/db";
 import TutorGroup from "@/models/tutorGroup.model";
 import { Layers, Plus, Users } from "lucide-react";
+import { generateOSFAMetadata } from "@/lib/metadata";
 
 export const revalidate = 0;
+
+export const metadata = generateOSFAMetadata({
+    path: "/admin/groups",
+    title: "Tutor Groups Management | TQP Admin",
+    description: "Overview of all active study circles, capacity limits, and assigned tutors.",
+})
 
 export default async function GroupsDirectoryPage() {
     await connectDB();

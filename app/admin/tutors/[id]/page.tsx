@@ -4,8 +4,19 @@ import connectDB from "@/lib/db";
 import Tutor from "@/models/tutor.model";
 import TutorGroup from "@/models/tutorGroup.model";
 import { UserCheck, Layers, ArrowLeft } from "lucide-react";
+import { generateOSFAMetadata } from "@/lib/metadata";
 
 export const revalidate = 0;
+
+export async function generateMetadata({ params }: { params: any }) {
+    const { id } = await params
+
+    return generateOSFAMetadata({
+        path: `/admin/tutors/${id}`,
+        title: "Tutor Profile & Group Details | TQP Admin",
+        description: "Manage tutor profiles, inspect assigned learning groups, and monitor group performance.",
+    })
+}
 
 export default async function TutorDetailPage({ params }: { params: { id: string } }) {
     await connectDB();

@@ -2,8 +2,15 @@ import Link from "next/link";
 import connectDB from "@/lib/db";
 import Student from "@/models/student.model";
 import { User, CheckCircle2, ShieldAlert } from "lucide-react";
+import { generateOSFAMetadata } from "@/lib/metadata";
 
 export const revalidate = 0;
+
+export const metadata = generateOSFAMetadata({
+    path: "/admin/students",
+    title: "Student Directory | TQP Admin",
+    description: "Search, filter, and manage all registered students and their current learning progress.",
+})
 
 export default async function StudentsDirectoryPage() {
     await connectDB();
