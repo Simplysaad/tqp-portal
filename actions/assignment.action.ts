@@ -1,7 +1,7 @@
 "use server";
 
 import connectDB from "@/lib/db";
-import Student, { IStudent } from "@/models/student.model";
+import Student, { IStudent, IStudentDocument } from "@/models/student.model";
 import TutorGroup from "@/models/tutorGroup.model";
 import { IUser } from "@/models/user.model";
 import { revalidatePath } from "next/cache";
@@ -48,6 +48,18 @@ export interface AutoAssignActionResult {
     };
 }
 
+
+export async function getUnassignedStudentIds(): Promise<string[]> {
+    await connectDB();
+    const unassignedStudents = await Student.find({ tutor: null }, "_id").lean();
+    return unassignedStudents.map((s) => s._id.toString());
+}
+
+export async function getUnassignedStudents(): Promise<IStudentDocument[]> {
+    await connectDB();
+    const unassignedStudents = await Student.find({ tutor: null }, "_id").lean();
+    return unassignedStudents;
+}
 
 export async function assignStudentToTutor(
     studentId: string,
@@ -136,6 +148,7 @@ export async function assignStudentToTutor(
             }
         }
 
+
         // 6. Atomic Assignment (Prevents concurrency race conditions)
         const updatedGroup = await TutorGroup.findOneAndUpdate(
             {
@@ -155,6 +168,11 @@ export async function assignStudentToTutor(
                 message: "Assignment failed due to a concurrent update or capacity cap reached.",
             };
         }
+
+        await Student.updateOne(
+            { _id: studentId },
+            { $set: { tutor: updatedGroup.tutor } }
+        );
 
         // 7. Revalidate dashboard routes
         revalidatePath("/admin/dashboard");
@@ -332,6 +350,12 @@ export async function assignStudentsToTutor(
                     studentId,
                     assigned: true,
                 });
+
+
+                await Student.updateOne(
+                    { _id: studentId },
+                    { $set: { tutor: updatedGroup.tutor } }
+                );
             } else {
                 assignmentResults.push({
                     studentId,
@@ -559,6 +583,11 @@ export async function autoAssignStudentsToTutorGroups(
                 if (targetGroupState.studentsSet.size >= targetGroupState.maxCapacity) {
                     groupStateMap.delete(targetGroupId);
                 }
+
+                await Student.updateOne(
+                    { _id: studentId },
+                    { $set: { tutor: updatedGroup.tutor } }
+                );
             } else {
                 results.push({
                     studentId,

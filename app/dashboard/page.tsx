@@ -1,7 +1,7 @@
 import { getSession } from "@/actions/user.action";
 import StudentDashboard from "./StudentDashboard";
 import TutorDashboard from "./TutorDashboard";
-import AdminDashboard from "../admin/AdminDashboard";
+import AdminDashboard from "../admin/dashboard/AdminDashboard";
 import Student from "@/models/student.model";
 import Tutor from "@/models/tutor.model";
 import connectDB from "@/lib/db";
@@ -18,8 +18,7 @@ const Dashboard = async () => {
 
 
     if (role === "admin" || role === "coordinator") {
-        // redirect("/admin");
-        <AdminDashboard userId={userId} />
+        redirect("/admin/dashboard");
     }
 
     await connectDB();

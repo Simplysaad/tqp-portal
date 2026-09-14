@@ -25,6 +25,7 @@ export interface ITutorGroupRules {
 
 export interface ITutorGroup {
     tutor: Types.ObjectId;
+    title: string;
     students: Types.ObjectId[];
     schedules: Types.ObjectId[];
     sessions: Types.ObjectId[];
@@ -44,6 +45,7 @@ export interface ITutorGroupDocument extends ITutorGroup, Document {
 
 export interface ITutorGroupPopulated extends Omit<ITutorGroup, "tutor" | "students" | "schedules" | "sessions"> {
     _id: Types.ObjectId;
+    title: string;
     tutor: {
         _id: Types.ObjectId;
         name: string;
@@ -118,6 +120,10 @@ const tutorGroupSchema = new Schema<ITutorGroupDocument>(
             ref: "Tutor",
             required: [true, "Tutor reference is required"],
             index: true,
+        },
+        title: {
+            type: String,
+            default: `tutor_group_${Date.now().toString().substring(-1, 5)}`,
         },
         students: [
             {

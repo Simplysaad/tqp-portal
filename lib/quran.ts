@@ -87,7 +87,7 @@ async function getAccessToken(forceRefresh = false): Promise<string> {
 // ---------------------------------------------------------------------------
 export const quranApi: AxiosInstance = axios.create({
     baseURL: `${API_BASE_URL}/content/api/v4`,
-    timeout: 10_000,
+    timeout: 30_000,
 });
 
 // Attach fresh auth headers before every request.

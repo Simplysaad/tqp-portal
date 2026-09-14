@@ -1,0 +1,7 @@
+import "./user.model"
+import "./tutor.model"
+import "./student.model"
+import "./schedule.model"
+import "./session.model"
+import "./goal.model"
+import "./tutorGroup.model"

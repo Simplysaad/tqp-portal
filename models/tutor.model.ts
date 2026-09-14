@@ -28,13 +28,6 @@ export const minutesToTime = (totalMinutes: number): string => {
 };
 
 // Sub-document Interface
-export interface IAvailability {
-    _id?: Types.ObjectId;
-    dayOfWeek: DayOfWeek;
-    startTime: number; // Minutes from midnight (0 - 1439) e.g., 540 = 09:00 AM
-    endTime: number;   // Minutes from midnight (0 - 1439) e.g., 1020 = 05:00 PM
-    isActive: boolean;
-}
 
 // Base Tutor Interface
 export interface ITutor {
@@ -42,7 +35,6 @@ export interface ITutor {
     gender: Gender;
     maximumStudents: number;
     isActive: boolean;
-    availability: IAvailability[];
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -52,61 +44,6 @@ export interface ITutorDocument extends ITutor, Document { }
 
 // Model Interface
 export interface ITutorModel extends Model<ITutorDocument> { }
-
-// Availability Sub-schema
-const availabilitySchema = new Schema<IAvailability>(
-    {
-        dayOfWeek: {
-            type: String,
-            enum: {
-                values: [
-                    "sunday",
-                    "monday",
-                    "tuesday",
-                    "wednesday",
-                    "thursday",
-                    "friday",
-                    "saturday",
-                ],
-                message: "{VALUE} is not a valid day of the week",
-            },
-            required: [true, "Day of the week is required"],
-            lowercase: true,
-            trim: true,
-        },
-        startTime: {
-            type: Number,
-            required: [true, "Start time is required"],
-            min: [0, "Start time cannot be less than 0 (00:00)"],
-            max: [1439, "Start time cannot exceed 1439 (23:59)"],
-        },
-        endTime: {
-            type: Number,
-            required: [true, "End time is required"],
-            min: [0, "End time cannot be less than 0 (00:00)"],
-            max: [1439, "End time cannot exceed 1439 (23:59)"],
-        },
-        isActive: {
-            type: Boolean,
-            default: true,
-        },
-    },
-    { _id: true }
-);
-
-// Custom Validator: Ensure startTime is strictly before endTime
-availabilitySchema.pre("validate", function () {
-    if (
-        this.startTime !== undefined &&
-        this.endTime !== undefined &&
-        this.startTime >= this.endTime
-    ) {
-        this.invalidate(
-            "endTime",
-            `End time (${minutesToTime(this.endTime)}) must be strictly after start time (${minutesToTime(this.startTime)})`
-        );
-    }
-});
 
 // Main Tutor Schema
 const tutorSchema = new Schema<ITutorDocument, ITutorModel>(
@@ -136,11 +73,7 @@ const tutorSchema = new Schema<ITutorDocument, ITutorModel>(
             type: Boolean,
             default: true,
             index: true,
-        },
-        availability: {
-            type: [availabilitySchema],
-            default: [],
-        },
+        }
     },
     {
         timestamps: true,
