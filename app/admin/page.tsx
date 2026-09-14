@@ -1,7 +1,6 @@
-import { getSession } from "@/actions/user.action";
+import { getSession, registerUser } from "@/actions/user.action";
 
 import AdminDashboard from "../admin/AdminDashboard";
-import connectDB from "@/lib/db";
 import { redirect } from "next/navigation";
 
 const Dashboard = async () => {
@@ -15,9 +14,13 @@ const Dashboard = async () => {
 
     if (role !== "admin" && role !== "coordinator") {
         redirect("/onboarding");
+
     }
 
-    await connectDB();
+
+    // redirect("/dashboard")
+
+
     return <AdminDashboard userId={userId} />;
 
 };

@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model, model, Types } from "mongoose";
+import { IUser } from "./user.model";
 
 // Union Types
 export type DayOfWeek =
@@ -37,7 +38,7 @@ export interface IAvailability {
 
 // Base Tutor Interface
 export interface ITutor {
-    user: Types.ObjectId; // Replace with IUser interface if populated
+    user: Types.ObjectId | IUser
     gender: Gender;
     maximumStudents: number;
     isActive: boolean;

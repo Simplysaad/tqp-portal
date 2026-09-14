@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model, model, Types } from "mongoose";
+import { IUser } from "./user.model";
 
 // Enums / Union Types
 export type Gender = "male" | "female";
@@ -14,7 +15,7 @@ export interface IMemorization {
 
 // Base Student Interface
 export interface IStudent {
-    user: Types.ObjectId;
+    user: Types.ObjectId | IUser
     matricNumber?: string;
     gender: Gender;
     faculty?: string;

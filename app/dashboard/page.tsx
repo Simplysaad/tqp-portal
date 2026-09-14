@@ -18,7 +18,8 @@ const Dashboard = async () => {
 
 
     if (role === "admin" || role === "coordinator") {
-        redirect("/admin");
+        // redirect("/admin");
+        <AdminDashboard userId={userId} />
     }
 
     await connectDB();
@@ -41,7 +42,6 @@ const Dashboard = async () => {
         return <TutorDashboard userId={userId} />;
     }
 
-    // Fallback redirect if role is unknown
     redirect("/onboarding");
 };
 
