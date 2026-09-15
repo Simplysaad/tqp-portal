@@ -1,416 +1,109 @@
-Overview
+# TQP Platform — Operational & Technical Documentation
 
-The TQP Platform is a digital management and accountability system designed for the TQP (Tahfiz/Qur'an memorisation) programme of MSSN OAU.
+The **TQP Platform** is a digital management and accountability system designed for the **Tahfiz/Qur'an Program (TQP)** under the Islamic Affairs Board (IAB) of the **Muslim Students' Society of Nigeria (MSSN), Obafemi Awolowo University (OAU) Branch**.
 
-The purpose of the platform is to help students make consistent progress in Qur'an memorisation by providing structured tutor assignment, fixed class schedules, attendance and progress tracking, automated reminders, and early identification of students who are becoming inactive or falling behind their memorisation goals.
-
-The platform is not intended to replace tutors or the existing communication channels. Rather, it provides the organisational infrastructure needed to make the programme more structured, measurable, and sustainable.
+The core mission of the platform is to transform flexible, informal learning arrangements into a structured, measurable, and sustainable ecosystem. It establishes operational infrastructure driven by rule-validated tutor assignments, fixed class schedules, session progress tracking, automated reminders, and early intervention mechanics for at-risk students.
 
 ---
 
-The Problems It Addresses
+## Problems Addressed
 
-The platform is designed around several problems currently affecting TQP:
-
-1. Inconsistent attendance
-
-Students often begin a semester with enthusiasm but gradually become irregular due to academic activities, poor time management, forgetfulness, and declining commitment.
-
-The platform will track attendance and identify students whose participation is declining.
-
-2. Lack of sustained motivation and accountability
-
-Many students struggle to maintain consistency after the initial excitement of joining the programme.
-
-Rather than relying entirely on external motivation, the platform gives students clear goals, measurable progress, regular feedback, and accountability.
-
-3. Excessive choice and poor tutor distribution
-
-Students currently have significant freedom to choose tutors and class arrangements. This can result in some tutors becoming overloaded while others have few or no students.
-
-The new system will allow coordinators to assign students to tutors based on factors such as:
-
-- Gender
-- Memorisation level
-- Availability
-- Tutor capacity
-- Class schedule
-
-Students can still request a change where there is a legitimate reason, but tutor assignment becomes a coordinated process rather than an unrestricted choice.
-
-4. Poor visibility into programme performance
-
-Without centralised records, it is difficult for coordinators to know:
-
-- Who is attending regularly
-- Who is falling behind
-- Who has stopped attending
-- Whether students are meeting their memorisation goals
-- Which tutors are overloaded
-- Whether classes are actually taking place consistently
-
-The platform provides this visibility.
+* **Inconsistent Attendance:** Prevents semester burnout and ghosting by tracking attendance patterns and proactively identifying declining participation.
+* **Lack of Accountability:** Replaces passive motivation with concrete targets, progress visualizers, and weekly performance feedback.
+* **Unbalanced Tutor Distribution:** Eliminates tutor overload by replacing unrestricted student choice with coordinator-managed assignments based on gender, capacity, schedule, and memorization levels.
+* **Poor Operational Visibility:** Provides centralized, real-time analytics on student attendance, class completion, and tutor capacity for administrative oversight.
 
 ---
 
-Core Concept
+## Core Operational Concept
 
-At the beginning of each session/semester, every student establishes a memorisation goal.
+```
+[Student Onboarding] -> [Establish Goal] -> [Rule-Based Tutor Assignment] -> [Session Logging] -> [Status Engine]
+                                                                                                |
+                                                    +-------------------------------------------+-------------------------------------------+
+                                                    |                                           |                                           |
+                                                    v                                           v                                           v
+                                                On Track                                     At Risk                                     Inactive
+                                    (Meeting Target Progress)                   (Declining Attendance/Progress)             (Multiple Missed Sessions)
 
-For example:
+```
 
-«Current level: 5 Juz
-Semester goal: 8 Juz»
+At the start of each academic session, every student sets a defined baseline and goal (e.g., *Current: 5 Juz -> Target: 8 Juz*). After each session, tutors log attendance and memorization throughput. The platform continuously computes actual progress against the target timeline, placing the student into a dynamic status tier:
 
-The student is then assigned a tutor and a regular class schedule.
-
-After every class, the session is recorded, including attendance and the student's memorisation/revision progress.
-
-The platform continuously compares the student's actual progress with their target.
-
-This allows both the student and coordinators to see whether the student is:
-
-🟢 On track
-🟡 At risk
-🔴 Inactive / significantly behind
-
-The objective is to identify problems early enough for intervention rather than discovering at the end of the semester that a student stopped participating weeks earlier.
+* **On Track:** Student attends regularly and meets target memorization velocity.
+* **At Risk:** Attendance or memorization pace drops below expected thresholds.
+* **Inactive:** Student misses multiple consecutive sessions or ceases logging activity.
 
 ---
 
-Main Platform Components
+## Core Platform Capabilities
 
-1. Student Registration
+### 1. Onboarding & Target Setting
 
-Students register through the platform and provide information necessary for appropriate placement.
+* Collects academic profile, current Qur'an baseline (Surah, Aayah, Page, Juz), preferred availability, and target goals.
+* Serves as the quantitative benchmark for semester tracking.
 
-Information can include:
+### 2. Rule-Validated Tutor Assignment
 
-- Name
-- Gender
-- Department/level
-- Contact information
-- Current memorisation level
-- Previous TQP participation
-- Availability
-- Preferred class frequency
-- Memorisation goal for the semester/session
+* **Coordinated Placement:** Matches students based on gender policies, capacity caps, and memorization ranges.
+* **Change Request Workflow:** Formally handles student schedule or tutor reassignment requests with coordinator oversight.
 
-The student's goal becomes the basis for tracking their progress throughout the session.
+### 3. Structured Class Engine
 
----
+* Enforces recurring class schedules with Google Meet integration.
+* Provides a formal mechanism for temporary academic adjustments (e.g., during exam periods) without dropping out of the program.
 
-2. Tutor Assignment
+### 4. Session Tracking & Logging
 
-Coordinators manage tutors and their availability/capacity.
+Tutors record comprehensive post-class data points in seconds:
 
-Students are assigned based on:
+* **Attendance:** Present, Absent, or Rescheduled.
+* **New Memorization:** Start and end boundaries (Surah, Aayah, Page).
+* **Revision:** Completed review pages/Juz.
+* **Qualitative Notes:** Performance notes and specific verse retention remarks.
 
-Student requirements → Tutor suitability → Availability → Tutor capacity
+### 5. Automated Status & Intervention System
 
-The system should prevent obvious overloading of tutors and give coordinators visibility into the distribution of students.
-
-Students who have legitimate reasons for changing tutors or schedules can submit a change request for coordinator approval.
+* **Real-time Monitoring:** Flags declining attendance or falling behind target milestones.
+* **Early Warning Feed:** Surfacing `At Risk` and `Inactive` students on the Coordinator Dashboard for rapid intervention.
 
 ---
 
-3. Structured Class Scheduling
+## Role-Based Dashboards
 
-Each student receives a defined recurring class schedule.
+### Student Dashboard
 
-For example:
+* Visual progress tracker against semester Juz goals.
+* Real-time attendance rate metrics.
+* Dynamic upcoming class banner with active Google Meet launcher.
+* Historical session logs and tutor feedback feed.
 
-«Tutor: Ustadh Ibrahim
-Days: Monday & Thursday
-Time: 7:00 PM
-Duration: 1 hour
-Platform: Google Meet»
+### Tutor Dashboard
 
-This replaces the current highly flexible arrangement with a more predictable structure.
+* Assigned student rosters and capacity indicators.
+* Class schedule management and Meet link generator.
+* Rapid session logger for post-class recording.
+* Individual student progress timeline.
 
-Flexibility still exists through an official request process for students who have genuine academic or personal constraints.
+### Coordinator / Admin Command Center
 
----
-
-4. Google Meet and Calendar Integration
-
-Google Meet will serve as the primary platform for online classes.
-
-The system can create/manage the relevant Google Calendar events and Meet links for scheduled classes.
-
-Students and tutors will be able to access their upcoming classes from their dashboard.
-
-Automated reminders can be sent before classes so that both students and tutors are less likely to forget their sessions.
-
-WhatsApp does not necessarily disappear. It remains useful for general communication and announcements, while Google Meet serves as the actual classroom.
+* **Aggregate KPIs:** Total Active Students, At-Risk Count, Total Tutors, and Live Classes.
+* **Management Engines:** Single & Bulk student assignment, unassigned queue sorting, and tutor capacity balancing.
+* **Program Health:** Program-wide attendance averages and risk distribution metrics.
 
 ---
 
-5. Session and Attendance Tracking
+## Minimum Viable Product (MVP) Scope
 
-After every class, the tutor records the outcome of the session.
-
-A session record can contain:
-
-- Student attendance
-- New memorisation completed
-- Qur'an revision completed
-- General performance
-- Tutor comments
-- Whether the class was cancelled/rescheduled
-
-For example:
-
-«Student: Ahmed
-Attendance: Present
-New memorisation: ½ page
-Revision: 3 pages
-Performance: Good
-Comment: Struggled with verses 12–17»
-
-The system then automatically updates the student's progress.
+| Domain | In MVP Scope | Deferred / Post-MVP |
+| --- | --- | --- |
+| **Student** | Registration, baseline setup, target setting, dashboard, class links, change requests. | Gamified leaderboards, social feeds, mobile app. |
+| **Tutor** | Student roster, session logger (attendance + memorization), schedule management. | AI-assisted recitation feedback, automated audio grading. |
+| **Coordinator** | Roster management, rule-validated assignment engine, unassigned queue, status monitoring. | Predictive analytics, automated AI intervention scripts. |
+| **Automation** | Session reminders, attendance tracking triggers, weekly summary notifications. | Automated WhatsApp bot integrations. |
 
 ---
 
-6. Student Progress Dashboard
+## Primary Success Metric
 
-Students have a personal dashboard showing their progress toward their semester goal.
-
-For example:
-
-«Semester Goal: 5 Juz
-Completed: 2.4 Juz
-Progress: 48%
-
-Attendance: 18/21 sessions
-This week: 2/2 sessions
-Current status: 🟢 On track»
-
-The purpose is to make the student's progress visible and give them a clear sense of where they currently stand.
-
----
-
-7. Weekly Progress and Feedback
-
-The system aggregates the student's weekly activity.
-
-Students can receive a simple weekly summary containing:
-
-- Sessions attended
-- New memorisation
-- Revision completed
-- Attendance percentage
-- Overall semester progress
-- Whether they are on track
-
-This provides regular feedback without relying entirely on tutors or coordinators to manually calculate progress.
-
----
-
-8. Early-Warning and Intervention System
-
-One of the most important functions of the platform is identifying students who are beginning to disengage.
-
-The system can automatically classify students based on their attendance and progress.
-
-🟢 On Track
-
-The student is attending consistently and progressing toward their target.
-
-🟡 At Risk
-
-Attendance or memorisation progress is beginning to fall below expectations.
-
-🔴 Inactive
-
-The student has stopped recording activity or has missed multiple consecutive sessions.
-
-The coordinator dashboard can therefore show something like:
-
-«TQP Overview
-
-🟢 84 Active
-🟡 11 At Risk
-🔴 6 Inactive»
-
-Coordinators can then investigate the affected students and contact them before they completely disengage.
-
----
-
-9. Academic/Temporary Schedule Adjustments
-
-The system recognises that students have academic responsibilities.
-
-Students should therefore be able to request temporary adjustments when circumstances such as examinations or major academic activities make their normal schedule difficult.
-
-Instead of completely disappearing from TQP, a student can communicate the problem and potentially have their schedule or target temporarily adjusted.
-
-The objective is to preserve continuity rather than punish students for legitimate academic constraints.
-
----
-
-10. Coordinator Dashboard
-
-The coordinator has a central overview of the entire programme.
-
-The dashboard provides information such as:
-
-Students
-
-- Total students
-- Active students
-- At-risk students
-- Inactive students
-- Attendance
-- Memorisation progress
-
-Tutors
-
-- Students assigned to each tutor
-- Tutor capacity
-- Tutor availability
-- Student distribution
-
-Classes
-
-- Upcoming classes
-- Completed sessions
-- Cancelled sessions
-- Attendance rates
-
-Progress
-
-- Average student progress
-- Students behind their targets
-- Students who have achieved their goals
-
-This allows the committee to make decisions based on actual programme data rather than assumptions.
-
----
-
-11. Tutor Dashboard
-
-Tutors have a simpler interface focused on their students.
-
-They can:
-
-- View their assigned students
-- View their schedule
-- Access Google Meet links
-- Mark attendance
-- Record memorisation/revision progress
-- Add session comments
-- Monitor individual student progress
-
-The system should make session logging extremely quick so that administrative work does not become a burden on tutors.
-
----
-
-12. Notifications and Reminders
-
-The platform automates routine reminders.
-
-Examples include:
-
-Before class:
-
-«Your TQP class with Ustadh Ibrahim begins in 30 minutes.»
-
-After class:
-
-«Your session has ended. Remember to record your progress.»
-
-After repeated absence:
-
-«You have missed your recent TQP sessions. Please check your schedule or contact your coordinator if you are having difficulties.»
-
-Weekly:
-
-«Your weekly TQP progress report is ready.»
-
-The aim is to reduce forgetfulness and maintain momentum.
-
----
-
-Guiding Philosophy
-
-The platform is built around four principles:
-
-Structure
-
-Students have a defined tutor, schedule, and memorisation target.
-
-Accountability
-
-Attendance and progress are recorded consistently.
-
-Visibility
-
-Students can see their own progress, while coordinators can see the health of the overall programme.
-
-Intervention
-
-The system identifies students who are struggling early enough for tutors or coordinators to intervene.
-
-The goal is therefore not simply to record attendance, but to create a system that helps students remain engaged and make measurable progress throughout the semester.
-
----
-
-MVP Scope
-
-The first version should remain focused.
-
-Student
-
-- Registration
-- Personal profile
-- Tutor/schedule information
-- Memorisation goal
-- Attendance history
-- Progress dashboard
-- Google Meet access
-- Change-request submission
-
-Tutor
-
-- Assigned students
-- Class schedule
-- Attendance recording
-- Session progress recording
-- Student progress overview
-
-Coordinator
-
-- Student management
-- Tutor management
-- Tutor/student assignment
-- Schedule management
-- Attendance monitoring
-- Progress monitoring
-- At-risk/inactive student detection
-- Basic programme analytics
-
-Automation
-
-- Class reminders
-- Session reminders
-- Weekly progress summaries
-- Inactivity/attendance alerts
-
-Features such as AI tutoring, advanced gamification, public leaderboards, automatic Qur'an recitation assessment, social feeds, and a dedicated mobile app should be considered later rather than included in the MVP.
-
----
-
-Desired Outcome
-
-The ultimate measure of the platform's success should not be the number of students registered or the number of attendance records created.
-
-The key question should be:
-
-«Are more students remaining active and making meaningful Qur'an memorisation progress throughout the semester?»
-
-The platform should enable TQP to move from a largely manual and flexible system into a structured programme where every student has:
-
-A tutor → a schedule → a goal → a record of progress → regular accountability → intervention when they begin to fall behind.
-
-In this sense, the platform becomes the operational backbone of TQP while the actual teaching and mentorship remain in the hands of the tutors.
+The primary success metric of the TQP Platform is not merely user registration or database records, but the **retention rate of active students making measurable Qur'an memorization progress throughout the entire academic semester.**
