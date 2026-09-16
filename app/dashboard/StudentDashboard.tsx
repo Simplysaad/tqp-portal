@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getNearestSchedule } from "@/actions/tutor.action";
 import TutorGroup from "@/models/tutorGroup.model";
 import { isScheduleOpen } from "@/actions/session.action";
+import { ITutor } from "@/models/tutor.model";
 
 interface StudentDashboardProps {
     userId: string;
@@ -21,7 +22,10 @@ export default async function StudentDashboard({ userId }: StudentDashboardProps
     await connectDB();
 
     // 1. Fetch student profile
-    const student = await Student.findOne({ user: userId }).lean();
+    const student = await Student.findOne({ user: userId }).populate({
+        path: "user",
+        select: "_id name"
+    }).lean();
     // // console.log("Student", student)
 
     if (!student) {
@@ -40,7 +44,16 @@ export default async function StudentDashboard({ userId }: StudentDashboardProps
      * extract the activeSchedule from the tutorGroup 
      */
 
-    const tutorGroup = await TutorGroup.findOne({ students: student._id, isActive: true })
+    const tutorGroup = await TutorGroup.findOne({ students: student._id, isActive: true }).populate({
+        path: "tutor",
+        populate: {
+            path: "user",
+            select: "name "
+        }
+    })
+
+    console.log("tutorGroup", tutorGroup);
+
     // if (!tutorGroup) {
     //     return (
     //         <div className="p-6 text-center">
@@ -98,7 +111,7 @@ export default async function StudentDashboard({ userId }: StudentDashboardProps
             {/* Header & Status */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Student Dashboard</h1>
+                    <h1 className="text-2xl font-bold text-gray-900">{(student.user as any).name || "Student Dashboard"}</h1>
                     <p className="text-gray-500 text-sm">
                         {student.department ? `${student.department} (${student.level} Level)` : "TQP Student"}
                     </p>
@@ -135,7 +148,7 @@ export default async function StudentDashboard({ userId }: StudentDashboardProps
                     <div className="flex items-center gap-2">
                         <h3 className="font-bold text-gray-900 text-base">
                             {tutorGroup
-                                ? `Tutor: ${(tutorGroup.tutor as any)?.user?.name || "Assigned Ustadh"}`
+                                ? `Tutor: ${(tutorGroup?.tutor as any).gender === "male" ? "Ustadh" : "Ustadhah"} ${(tutorGroup.tutor as any)?.user?.name || "Assigned Ustadh"}`
                                 : "No Enrolled Tutor"}
                         </h3>
                         {isLinkActive && (
@@ -146,10 +159,11 @@ export default async function StudentDashboard({ userId }: StudentDashboardProps
                     </div>
                     <p className="text-sm text-gray-600">
                         {nearestSchedule
-                            ? `Weekly Slot: ${nearestSchedule.dayOfWeek}s (${minutesToTime(
+                            && `Weekly Slot: ${nearestSchedule.dayOfWeek}s (${minutesToTime(
                                 nearestSchedule.startTime
                             )} - ${minutesToTime(nearestSchedule.endTime)})`
-                            : "Please enroll with a tutor to see your upcoming schedule."}
+                            // : "Please enroll with a tutor to see your upcoming schedule."
+                        }
                     </p>
                 </div>
 

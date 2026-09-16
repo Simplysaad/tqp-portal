@@ -1,4 +1,4 @@
-import { getSession } from "@/actions/user.action";
+import { getSession, logoutUser } from "@/actions/user.action";
 import StudentOnboardingForm from "./StudentOnboarding";
 import TutorOnboardingForm from "./TutorOnboarding";
 import Student from "@/models/student.model";
@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 
 import { generateOSFAMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
+import User from "@/models/user.model";
 export const metadata: Metadata = generateOSFAMetadata({
     path: "/onboarding",
     title: "Complete Onboarding | TQP System",
@@ -25,6 +26,12 @@ const Onboarding = async () => {
     const { id: userId, role } = session;
 
     await connectDB();
+
+    const currentUser = await User.findOne({ _id: userId });
+    if (!currentUser) {
+        logoutUser()
+        redirect("/login?next=/onboarding")
+    }
 
     const isStudent = await Student.findOne({ user: userId });
     const isTutor = await Tutor.findOne({ user: userId });

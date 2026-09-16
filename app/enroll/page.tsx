@@ -61,6 +61,13 @@ export default async function EnrollPage({ searchParams }: PageProps) {
         currentStudentId = student._id.toString();
     }
 
+    const isCurrentlyEnrolled = Boolean(student?.tutor)
+
+    if (isCurrentlyEnrolled) {
+        // <RequestTutorChangeModal/>
+        redirect(`/dashboard?message=User is already enrolled with a tutor!`);
+    }
+
     // Populate both sibling references ('tutor' with nested 'user', and 'schedules')
     const tutorGroups = await TutorGroup.find({ isActive: true })
         .populate({

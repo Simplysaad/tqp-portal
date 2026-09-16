@@ -9,13 +9,14 @@ import {
 import SearchableSelect from "@/components/SearchableSelect";
 import { QURAN_SURAHS } from "@/lib/surah";
 import { IMemorization } from "@/models/student.model";
+import { getDepartments, getFaculties } from "@/lib/faculties";
 
 export interface FormState {
     gender: "male" | "female" | "";
     matricNumber: string;
     faculty: string;
     department: string;
-    level: string | number;
+    level: string;
     currentMemorization: IMemorization;
     expectedMemorization: IMemorization;
 }
@@ -118,19 +119,61 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
         }));
     };
 
+
+    const scrollToTop = () => {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth",
+        });
+    };
+
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setError(null);
+        if (!formData.gender) {
+            setError("Select your gender.");
+            scrollToTop()
+            return;
+        }
+
+        if (!formData.matricNumber) {
+            setError("Enter your Matric number.");
+            scrollToTop()
+            return;
+        }
+
 
         if (!formData.faculty) {
-            setError("Please select a faculty.");
+            setError("Select your faculty.");
+            scrollToTop()
             return;
         }
 
-        if (!formData.currentMemorization.surah) {
-            setError("Please select a Current Surah.");
+        if (!formData.department) {
+            setError("Select your department.");
+            scrollToTop()
             return;
         }
+
+        if (!formData.level) {
+            setError("Select your academic level.");
+            scrollToTop()
+            return;
+        }
+
+        if (!formData.currentMemorization.surah || !formData.currentMemorization.aayah) {
+            setError("Provide both your current Surah and Ayah.");
+            scrollToTop()
+            return;
+        }
+
+        // Fixed logic bug: second condition now checks .aayah instead of .surah twice
+        if (!formData.expectedMemorization.surah || !formData.expectedMemorization.aayah) {
+            setError("Provide both your expected Surah and Ayah.");
+            scrollToTop()
+            return;
+        }
+
 
         setLoading(true);
 
@@ -168,13 +211,15 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                 },
             };
 
+            console.log("payload", payload)
             const res = await completeStudentOnboarding(payload);
 
             if (!res.success) {
                 setError(res.message || "An error occurred during onboarding.");
                 setLoading(false);
             } else {
-                router.push("/dashboard");
+                // router.push("/dashboard");
+                router.push("/enroll");
             }
         } catch (err: any) {
             setError(err.message || "An unexpected error occurred.");
@@ -204,17 +249,19 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                         <label className="block text-xs font-semibold text-emerald-950 uppercase tracking-wider mb-1">
                             Gender *
                         </label>
-                        <select
+                        <SearchableSelect
                             name="gender"
+                            options={["male", "female"]}
                             value={formData.gender}
-                            onChange={handleChange}
+                            onChange={(val: string) =>
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    gender: val as FormState["gender"],
+                                }))
+                            }
                             required
-                            className="w-full border border-emerald-900/20 p-2.5 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-800"
-                        >
-                            <option value="">Select Gender</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                        </select>
+                        />
+
                     </div>
 
                     <div>
@@ -226,7 +273,7 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                             name="matricNumber"
                             value={formData.matricNumber}
                             onChange={handleChange}
-                            required
+                            // required
                             placeholder="e.g. 21/15CD001"
                             className="w-full border border-emerald-900/20 p-2.5 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-800"
                         />
@@ -246,13 +293,7 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                             onChange={(val: string) =>
                                 setFormData((prev) => ({ ...prev, faculty: val }))
                             }
-                            options={[
-                                "tech",
-                                "science",
-                                "arts",
-                                "administration",
-                                "social sciences",
-                            ]}
+                            options={getFaculties()}
                         />
                     </div>
 
@@ -260,14 +301,14 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                         <label className="block text-xs font-semibold text-emerald-950 uppercase tracking-wider mb-1">
                             Department *
                         </label>
-                        <input
-                            type="text"
+                        <SearchableSelect
+                            required
                             name="department"
                             value={formData.department}
-                            onChange={handleChange}
-                            required
-                            placeholder="e.g. Civil Engineering"
-                            className="w-full border border-emerald-900/20 p-2.5 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-800"
+                            onChange={(val: string) =>
+                                setFormData((prev) => ({ ...prev, department: val }))
+                            }
+                            options={getDepartments(formData.faculty)}
                         />
                     </div>
                 </div>
@@ -277,24 +318,30 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                     <label className="block text-xs font-semibold text-emerald-950 uppercase tracking-wider mb-1">
                         Academic Level *
                     </label>
-                    <input
-                        type="number"
+
+                    <SearchableSelect
+                        required
                         name="level"
                         value={formData.level}
-                        onChange={handleChange}
-                        required
-                        min={100}
-                        step={100}
-                        placeholder="e.g. 300"
-                        className="w-full border border-emerald-900/20 p-2.5 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-800"
+                        onChange={(val: string) =>
+                            setFormData((prev) => ({ ...prev, level: val }))
+                        }
+                        options={[
+                            "100", "200", "300", "400", "500", "600", "700"
+                        ]}
                     />
                 </div>
 
                 {/* Current Memorization Section */}
                 <div className="p-4 border border-emerald-900/15 rounded-xl bg-emerald-50/50 space-y-3">
-                    <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
-                        Current Memorization Status
-                    </h3>
+                    <div className="space-y-1">
+                        <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                            Current Memorization Status
+                        </h3>
+                        <p className="text-xs text-emerald-800/80">
+                            Enter where you would like to be at the end of the semester.
+                        </p>
+                    </div>
 
                     <SearchableSelect
                         required
@@ -323,7 +370,7 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                                         e.target.value
                                     )
                                 }
-                                required
+                                // required
                                 placeholder="e.g. 255"
                                 min={1}
                                 max={
@@ -370,9 +417,14 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
 
                 {/* Goal Memorization Section */}
                 <div className="p-4 border border-emerald-900/15 rounded-xl bg-emerald-50/50 space-y-3">
-                    <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
-                        Memorization Goal
-                    </h3>
+                    <div className="space-y-1">
+                        <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
+                            Memorization Goal
+                        </h3>
+                        <p className="text-xs text-emerald-800/80">
+                            Enter where you would like to be at the end of the semester.
+                        </p>
+                    </div>
 
                     <SearchableSelect
                         required
@@ -387,7 +439,7 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
 
                     <div className="grid grid-cols-3 gap-2">
                         <div>
-                            <label className="block text-[10px] font-medium text-gray-500 mb-0.5">
+                            <label className="block text-xs font-medium text-emerald-900/80 mb-1">
                                 Aayah *
                             </label>
                             <input
@@ -401,7 +453,7 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                                         e.target.value
                                     )
                                 }
-                                required
+                                // required
                                 placeholder="e.g. 255"
                                 min={1}
                                 max={
@@ -413,7 +465,7 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-medium text-gray-500 mb-0.5">
+                            <label className="block text-xs font-medium text-emerald-900/80 mb-1">
                                 Juz (auto)
                             </label>
                             <input
@@ -426,7 +478,7 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-medium text-gray-500 mb-0.5">
+                            <label className="block text-xs font-medium text-emerald-900/80 mb-1">
                                 Page (auto)
                             </label>
                             <input
@@ -439,7 +491,7 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                             />
                         </div>
                     </div>
-                    <p className="text-[10px] text-gray-500">
+                    <p className="text-[11px] text-emerald-800/70">
                         {lookingUpExpected
                             ? "Looking up juz & page…"
                             : "Juz & page fill in automatically from surah + aayah."}

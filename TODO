@@ -1,7 +1,6 @@
 TODO
 * Start working on action entry links that allow users to use specialized links to perform certain actions without necessarilly having to navigate the platform
-* 
-
+* Create a customized alert and confirm modal to display information in various states instead of just window.alert()
 
 
 ### 🔴 Phase 4: Coordinator & Admin System (Started)

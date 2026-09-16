@@ -44,7 +44,7 @@ export async function isScheduleOpen(schedule: IScheduleDocument | string): Prom
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     // 1. Check if schedule matches current day and time bounds
-    const isDayMatching = doc.dayOfWeek.toLowerCase() === currentDay;
+    const isDayMatching = doc.dayOfWeek?.toLowerCase() === currentDay;
     const isTimeInRange = currentMinutes >= doc.startTime && currentMinutes <= doc.endTime;
     const isCurrentlyInWindow = isDayMatching && isTimeInRange;
 
