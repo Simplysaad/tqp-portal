@@ -1,26 +1,27 @@
 import mongoose, { Schema, Document, Model, model, Types } from "mongoose";
 import { IStudent } from "./student.model";
 import { IUser } from "./user.model";
+import { MemorizationPosition } from "@/lib/quran";
 
 export type AttendanceStatus = "present" | "absent" | "partial" | "cancelled";
 export type PerformanceRating = "excellent" | "good" | "fair" | "needs_work";
 
-export interface IQuranPosition {
-    surah?: string;
-    aayah?: number;
-    page?: number;
-    juz?: number;
-}
+// export interface MemorizationPosition{
+//     surah: string;
+//     aayah: number;
+//     page?: number;
+//     juz?: number;
+// }
 
 export interface IMemorizationRange {
-    start?: IQuranPosition;
-    end?: IQuranPosition;
+    start?: MemorizationPosition;
+    end?: MemorizationPosition;
 }
 
 export interface ISession {
     name: string;
     schedule: Types.ObjectId;
-    student: IStudent | Types.ObjectId
+    student: Types.ObjectId | IStudent
     tutor: Types.ObjectId;
     date: Date;
     startTime: number; // Minutes from midnight (0-1439)
@@ -34,7 +35,7 @@ export interface ISession {
     // Performance & Attendance Logged by Tutor After Class
     attendance: AttendanceStatus;
     approved: boolean;
-    newMemorization?: IMemorizationRange;
+    newMemorization: IMemorizationRange;
     revision?: IMemorizationRange;
     performance?: PerformanceRating;
     tutorsComment?: string;
@@ -46,7 +47,7 @@ export interface ISession {
 export interface ISessionDocument extends ISession, Document { }
 export interface ISessionModel extends Model<ISessionDocument> { }
 
-const quranPositionSchema = new Schema<IQuranPosition>(
+const quranPositionSchema = new Schema<MemorizationPosition>(
     {
         surah: { type: String, trim: true },
         aayah: { type: Number, min: 1 },

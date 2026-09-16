@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache";
 import mongoose from "mongoose";
 import connectDB from "@/lib/db";
-import Student, { IMemorization } from "@/models/student.model";
+import Student from "@/models/student.model";
 import { getSession } from "./user.action";
 import Goal from "@/models/goal.model";
 import User from "@/models/user.model";
 import { QURAN_SURAHS } from "@/lib/surah";
-import { getMemorizationPosition } from "@/lib/quran";
+import { getMemorizationPosition, MemorizationPosition } from "@/lib/quran";
 
 
 export interface CompleteStudentOnboardingInput {
@@ -18,13 +18,13 @@ export interface CompleteStudentOnboardingInput {
     faculty?: string;
     department?: string;
     level?: number;
-    currentMemorization?: IMemorization;
-    expectedMemorization?: IMemorization;
+    currentMemorization?: MemorizationPosition;
+    expectedMemorization?: MemorizationPosition;
 }
 
 // Global mushaf ordinal (ayah count from the start of the Qur'an) for a position,
 // derived from the local surah table. Used to count the verses between two positions.
-function verseOrdinal(pos?: IMemorization): number {
+function verseOrdinal(pos?: MemorizationPosition): number {
     if (!pos?.surah || !pos.aayah) return 0;
     const surah = QURAN_SURAHS.find(
         (s) => s.name.toLowerCase() === pos.surah!.trim().toLowerCase()
@@ -33,7 +33,7 @@ function verseOrdinal(pos?: IMemorization): number {
     const versesBefore = QURAN_SURAHS
         .filter((s) => s.number < surah.number)
         .reduce((sum, s) => sum + s.totalAayahs, 0);
-    return versesBefore + pos.aayah;
+    return versesBefore + Number(pos.aayah);
 }
 
 
@@ -57,7 +57,7 @@ export async function completeStudentOnboarding(data: CompleteStudentOnboardingI
         }
 
         // Default fallback values for Quranic position if left empty
-        const defaultPosition: IMemorization = {
+        const defaultPosition: MemorizationPosition = {
             surah: "Al-Fatiha",
             aayah: 1,
             juz: 1,
@@ -91,14 +91,14 @@ export async function completeStudentOnboarding(data: CompleteStudentOnboardingI
             const [currentPos, targetPos] = await Promise.all([
                 getMemorizationPosition(
                     currentMemorization.surah ?? defaultPosition.surah!,
-                    currentMemorization.aayah ?? defaultPosition.aayah!
+                    Number(currentMemorization.aayah ?? defaultPosition.aayah!)
                 ),
                 getMemorizationPosition(
                     targetMemorization.surah ?? defaultPosition.surah!,
-                    targetMemorization.aayah ?? defaultPosition.aayah!
+                    Number(targetMemorization.aayah ?? defaultPosition.aayah!)
                 ),
             ]);
-            targetPages = Math.abs((targetPos.page ?? 0) - (currentPos.page ?? 0));
+            targetPages = Math.abs((Number(targetPos.page) ?? 0) - (Number(currentPos.page) ?? 0));
         } catch (error) {
             console.error("QF page lookup failed; leaving targetPages at 0:", error);
         }
@@ -109,6 +109,7 @@ export async function completeStudentOnboarding(data: CompleteStudentOnboardingI
             semester: "Harmattan",
             type: "memorization",
             title: "My Initial Hifz Goal",
+            start: currentMemorization,
             current: currentMemorization,
             target: targetMemorization,
             targetPages,

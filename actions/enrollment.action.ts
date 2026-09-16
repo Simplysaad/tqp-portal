@@ -95,7 +95,7 @@ export async function enrollWithTutor(tutorId: string) {
 
         // 5. Rule Check: Memorization Range Compliance
         const groupRange = tutorGroup.rules?.memorizationRange;
-        const studentJuz = student.currentMemorization?.juz;
+        const studentJuz = Number(student.currentMemorization?.juz);
 
         if (groupRange?.start?.juz && groupRange?.end?.juz && studentJuz) {
             const minJuz = Math.min(groupRange.start.juz, groupRange.end.juz);

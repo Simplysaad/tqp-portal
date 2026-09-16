@@ -1,5 +1,5 @@
 import mongoose, { Schema, Document, Model, model, Types } from "mongoose";
-import { IMemorization } from "./student.model";
+import { MemorizationPosition } from "@/lib/quran";
 
 export type GoalType = "memorization" | "revision" | "attendance";
 export type GoalStatus = "in_progress" | "completed" | "abandoned";
@@ -9,8 +9,9 @@ export interface IGoal {
     semester: string; // e.g., "Fall 2026" or "Semester 1"
     type: GoalType;
     title: string;
-    current: IMemorization;
-    target: IMemorization;
+    start: MemorizationPosition;
+    current: MemorizationPosition;
+    target: MemorizationPosition;
     targetPages: number;
     targetVerses: number;
     startDate: Date;
@@ -25,7 +26,7 @@ export interface IGoalDocument extends IGoal, Document { }
 export interface IGoalModel extends Model<IGoalDocument> { }
 
 // Sub-schema for Quranic position tracking
-const memorizationPositionSchema = new Schema<IMemorization>(
+const memorizationPositionSchema = new Schema<MemorizationPosition>(
     {
         surah: { type: String, trim: true },
         aayah: { type: Number, min: 1 },
@@ -52,6 +53,10 @@ const goalSchema = new Schema<IGoalDocument, IGoalModel>(
             type: String,
             required: [true, "Goal title is required"],
             trim: true,
+        },
+        start: {
+            type: memorizationPositionSchema,
+            required: true,
         },
         current: {
             type: memorizationPositionSchema,

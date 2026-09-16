@@ -18,6 +18,12 @@ import { QURAN_SURAHS } from "@/lib/surah";
  */
 
 type QfEnv = "prelive" | "production";
+export interface MemorizationPosition {
+    surah: string;
+    aayah: number | string;
+    juz?: number | string;
+    page?: number | string;
+}
 
 const QF_ENV: QfEnv =
     process.env.QF_ENV === "production" ? "production" : "prelive";
@@ -34,8 +40,6 @@ const HOSTS: Record<QfEnv, { oauth: string; api: string }> = {
 };
 
 const { oauth: OAUTH_BASE_URL, api: API_BASE_URL } = HOSTS[QF_ENV];
-const CLIENT_ID = process.env.QF_CLIENT_ID;
-const CLIENT_SECRET = process.env.QF_CLIENT_SECRET;
 
 // ---------------------------------------------------------------------------
 // Token management
@@ -52,11 +56,25 @@ let cachedToken: string | null = null;
 let tokenExpiresAt = 0; // epoch ms
 
 async function getAccessToken(forceRefresh = false): Promise<string> {
-    if (!CLIENT_ID || !CLIENT_SECRET) {
+    const CLIENT_ID = process.env.QF_CLIENT_ID;
+    const CLIENT_SECRET = process.env.QF_CLIENT_SECRET;
+    // if (!CLIENT_ID || !CLIENT_SECRET) {
+    //     throw new Error(
+    //         "Missing QF_CLIENT_ID / QF_CLIENT_SECRET environment variables."
+    //     );
+    // }
+
+    if (!CLIENT_SECRET) {
         throw new Error(
-            "Missing QF_CLIENT_ID / QF_CLIENT_SECRET environment variables."
+            "Missing QF_CLIENT_SECRET environment variables."
         );
     }
+    if (!CLIENT_ID) {
+        throw new Error(
+            "Missing QF_CLIENT_ID environment variables."
+        );
+    }
+
 
     const now = Date.now();
     // Reuse the cached token until ~60s before it expires.
@@ -95,7 +113,7 @@ quranApi.interceptors.request.use(
     async (config: InternalAxiosRequestConfig) => {
         const token = await getAccessToken();
         config.headers.set("x-auth-token", token);
-        config.headers.set("x-client-id", CLIENT_ID!);
+        config.headers.set("x-client-id", process.env.QF_CLIENT_ID!);
         return config;
     }
 );
@@ -162,15 +180,13 @@ export async function getAayahInfo({
     if (!match) {
         throw new Error(`Surah "${surah}" not found in QURAN_SURAHS.`);
     }
+
+    console.log("match", match)
+
     return getVerseByKey(`${match.number}:${aayah}`);
 }
 
-export interface MemorizationPosition {
-    surah: string;
-    aayah: number;
-    juz?: number;
-    page?: number;
-}
+
 
 /**
  * Resolve the authoritative juz + page for a surah name + aayah number from the
@@ -188,4 +204,23 @@ export async function getMemorizationPosition(
         juz: verse?.juz_number,
         page: verse?.page_number,
     };
+}
+
+
+
+export function calculateMemorizationProgress(
+    startPage?: number,
+    currentPage?: number,
+    targetPage?: number
+): number {
+    if (!startPage || !currentPage || !targetPage) return 0;
+    if (targetPage <= startPage) return 100;
+
+    const completed = currentPage - startPage;
+    const total = targetPage - startPage;
+
+    if (total <= 0) return 0;
+
+    const percentage = (completed / total) * 100;
+    return Math.min(100, Math.max(0, Math.round(percentage)));
 }

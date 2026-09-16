@@ -1,4 +1,6 @@
 // @/types/index.ts
+import { MemorizationPosition } from "@/lib/quran";
+import { AttendanceStatus, PerformanceRating } from "@/models/session.model";
 import { Types } from "mongoose";
 
 export type Gender = "male" | "female";
@@ -11,8 +13,8 @@ export interface IMemorization {
 }
 
 export interface IMemorizationRange {
-    start?: { juz: number };
-    end?: { juz: number };
+    start?: MemorizationPosition;
+    end?: MemorizationPosition;
 }
 
 export interface ITutorGroupRules {
@@ -61,3 +63,20 @@ export interface ITutorGroup {
     isActive: boolean;
     createdAt?: string | Date;
 }
+export interface IStudentLogPayload {
+    sessionId: string;
+    studentId: string;
+    newMemorization?: IMemorizationRange;
+    revision?: IMemorizationRange;
+}
+
+export interface ITutorVerifyPayload {
+    sessionId: string;
+    tutorId: string;
+    attendance: AttendanceStatus;
+    performance?: PerformanceRating;
+    tutorsComment?: string;
+    newMemorization: IMemorizationRange;
+    revision?: IMemorizationRange;
+}
+

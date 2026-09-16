@@ -3,7 +3,7 @@ import { Schema, model, models, Model } from "mongoose";
 
 // --- Subdocument Types ---
 
-export interface IQuranPosition {
+export interface MemorizationPosition {
     surahNumber?: number; // 1 - 114
     surahName?: string;   // e.g., "Al-Baqarah"
     aayah?: number;       // >= 1
@@ -11,8 +11,8 @@ export interface IQuranPosition {
 }
 
 export interface IMemorizationRange {
-    start?: IQuranPosition;
-    end?: IQuranPosition;
+    start?: MemorizationPosition;
+    end?: MemorizationPosition;
 }
 
 export interface ITutorGroupRules {

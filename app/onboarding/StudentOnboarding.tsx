@@ -8,8 +8,8 @@ import {
 } from "@/actions/student.action";
 import SearchableSelect from "@/components/SearchableSelect";
 import { QURAN_SURAHS } from "@/lib/surah";
-import { IMemorization } from "@/models/student.model";
 import { getDepartments, getFaculties } from "@/lib/faculties";
+import { MemorizationPosition } from "@/lib/quran";
 
 export interface FormState {
     gender: "male" | "female" | "";
@@ -17,13 +17,13 @@ export interface FormState {
     faculty: string;
     department: string;
     level: string;
-    currentMemorization: IMemorization;
-    expectedMemorization: IMemorization;
+    currentMemorization: MemorizationPosition;
+    expectedMemorization: MemorizationPosition;
 }
 
 // Custom hook to handle auto-lookup for Juz and Page numbers
 function useMemorizationLookup(
-    memorization: IMemorization,
+    memorization: MemorizationPosition,
     onUpdate: (juz: number, page: number) => void
 ) {
     const [isLookingUp, setIsLookingUp] = useState(false);
@@ -44,7 +44,7 @@ function useMemorizationLookup(
             try {
                 const res = await lookupMemorizationPosition(surah, aayah);
                 if (res?.success) {
-                    onUpdate(res.juz ?? 0, res.page ?? 0);
+                    onUpdate(Number(res.juz) ?? 0, Number(res.page) ?? 0);
                 }
             } catch (err) {
                 console.error("Failed to lookup verse details:", err);
@@ -189,25 +189,25 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
                     surah: formData.currentMemorization.surah,
                     aayah: formData.currentMemorization.aayah
                         ? Number(formData.currentMemorization.aayah)
-                        : undefined,
+                        : "",
                     juz: formData.currentMemorization.juz
                         ? Number(formData.currentMemorization.juz)
-                        : undefined,
+                        : "",
                     page: formData.currentMemorization.page
                         ? Number(formData.currentMemorization.page)
-                        : undefined,
+                        : "",
                 },
                 expectedMemorization: {
                     surah: formData.expectedMemorization.surah,
                     aayah: formData.expectedMemorization.aayah
                         ? Number(formData.expectedMemorization.aayah)
-                        : undefined,
+                        : "",
                     juz: formData.expectedMemorization.juz
                         ? Number(formData.expectedMemorization.juz)
-                        : undefined,
+                        : "",
                     page: formData.expectedMemorization.page
                         ? Number(formData.expectedMemorization.page)
-                        : undefined,
+                        : "",
                 },
             };
 

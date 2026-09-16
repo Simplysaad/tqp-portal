@@ -1,17 +1,18 @@
 import mongoose, { Schema, Document, Model, model, Types } from "mongoose";
 import { IUser } from "./user.model";
+import { MemorizationPosition } from "@/lib/quran";
 
 // Enums / Union Types
 export type Gender = "male" | "female";
 export type StudentStatus = "active" | "at risk" | "inactive";
 
 // Sub-document Interface
-export interface IMemorization {
-    surah?: string;
-    aayah?: number;
-    juz?: number;
-    page?: number;
-}
+// export interface IMemorization {
+//     surah?: string;
+//     aayah?: number;
+//     juz?: number;
+//     page?: number;
+// }
 
 // Base Student Interface
 export interface IStudent {
@@ -21,7 +22,7 @@ export interface IStudent {
     faculty?: string;
     department?: string;
     level?: number;
-    currentMemorization?: IMemorization;
+    currentMemorization?: MemorizationPosition;
     status: StudentStatus;
     tutor: Types.ObjectId;
     createdAt?: Date;

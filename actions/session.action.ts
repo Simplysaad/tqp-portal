@@ -1,11 +1,15 @@
 "use server";
 
-import Session, { AttendanceStatus, PerformanceRating, IMemorizationRange } from "@/models/session.model";
+import Session, { IMemorizationRange } from "@/models/session.model";
 import Schedule, { IScheduleDocument, DayOfWeek } from "@/models/schedule.model";
 import { revalidatePath } from "next/cache";
 import TutorGroup from "@/models/tutorGroup.model";
 import connectDB from "@/lib/db";
 import { Types } from "mongoose";
+import Goal from "@/models/goal.model";
+import { calculateMemorizationProgress } from "@/lib/quran";
+import Student from "@/models/student.model";
+import { IStudentLogPayload, ITutorVerifyPayload } from "@/types";
 
 
 
@@ -175,19 +179,81 @@ export async function joinSessionViaLink(tutorGroupId: string | Types.ObjectId, 
 }
 
 
+
+// export function calculateMemorizationProgress(
+//     startPage?: number,
+//     currentPage?: number,
+//     targetPage?: number
+// ): number {
+//     if (!startPage || !currentPage || !targetPage) return 0;
+//     if (targetPage <= startPage) return 100;
+
+//     const completed = currentPage - startPage;
+//     const total = targetPage - startPage;
+
+//     if (total <= 0) return 0;
+
+//     const percentage = (completed / total) * 100;
+//     return Math.min(100, Math.max(0, Math.round(percentage)));
+// }
+
 /**
- * 2. STUDENT ACTION: Log Progress After Class
- * Allows the student to submit their new memorization and revision ranges.
+ * Shared Helper: Updates active goal progress percentage, goal current position,
+ * and the student's global currentMemorization profile checkpoint.
  */
-interface IStudentLogPayload {
-    sessionId: string;
-    studentId: string;
-    newMemorization?: IMemorizationRange;
-    revision?: IMemorizationRange;
+async function updateStudentGoalAndProgress(
+    studentId: string,
+    newMemorization?: IMemorizationRange
+) {
+    if (!newMemorization?.end?.page) return;
+
+    const currentPage = newMemorization.end.page;
+    const activeGoal = await Goal.findOne({ student: studentId, status: "in_progress" });
+
+    if (activeGoal) {
+        const startPage = activeGoal.start?.page;
+        const targetPage = activeGoal.target?.page;
+
+        const progressPercentage = calculateMemorizationProgress(
+            Number(startPage),
+            Number(currentPage),
+            Number(targetPage)
+        );
+
+        activeGoal.progressPercentage = progressPercentage;
+
+        activeGoal.current = {
+            ...activeGoal.current,
+            surah: newMemorization.end.surah || activeGoal.current?.surah,
+            aayah: newMemorization.end.aayah || activeGoal.current?.aayah,
+            juz: newMemorization.end.juz || activeGoal.current?.juz,
+            page: currentPage,
+        };
+
+        if (progressPercentage >= 100) {
+            activeGoal.status = "completed";
+        }
+
+        await activeGoal.save();
+    }
+
+    // Sync student profile's current checkpoint
+    await Student.findByIdAndUpdate(studentId, {
+        $set: {
+            "currentMemorization.surah": newMemorization.end.surah,
+            "currentMemorization.aayah": newMemorization.end.aayah,
+            "currentMemorization.juz": newMemorization.end.juz,
+            "currentMemorization.page": currentPage,
+        },
+    });
 }
 
+/**
+ * 2. STUDENT ACTION: Log Progress After Class
+ */
 export async function logStudentProgress(payload: IStudentLogPayload) {
     try {
+        await connectDB();
         const { sessionId, studentId, newMemorization, revision } = payload;
 
         const session = await Session.findOne({ _id: sessionId, student: studentId });
@@ -195,12 +261,17 @@ export async function logStudentProgress(payload: IStudentLogPayload) {
             return { success: false, error: "Session record not found or unauthorized" };
         }
 
+
         if (newMemorization) session.newMemorization = newMemorization;
         if (revision) session.revision = revision;
-
         await session.save();
 
+        // Sync active goal and student profile position
+        // await updateStudentGoalAndProgress(studentId, newMemorization);
+
         revalidatePath("/dashboard");
+        revalidatePath(`/dashboard/sessions/${sessionId}`);
+
         return { success: true, message: "Progress logged successfully" };
     } catch (error: any) {
         return { success: false, error: error.message || "Failed to log progress" };
@@ -209,21 +280,10 @@ export async function logStudentProgress(payload: IStudentLogPayload) {
 
 /**
  * 3. TUTOR ACTION: Verify, Edit, or Approve Session
- * Allows the tutor to update attendance status, adjust logged ranges, set performance ratings, and add comments.
  */
-
-interface ITutorVerifyPayload {
-    sessionId: string;
-    tutorId: string;
-    attendance: AttendanceStatus;
-    performance?: PerformanceRating;
-    tutorsComment?: string;
-    newMemorization?: IMemorizationRange;
-    revision?: IMemorizationRange;
-}
-
 export async function verifyAndCompleteSession(payload: ITutorVerifyPayload) {
     try {
+        await connectDB();
         const {
             sessionId,
             tutorId,
@@ -243,12 +303,18 @@ export async function verifyAndCompleteSession(payload: ITutorVerifyPayload) {
         if (performance) session.performance = performance;
         if (tutorsComment !== undefined) session.tutorsComment = tutorsComment;
         if (newMemorization) session.newMemorization = newMemorization;
-        if (revision) session.revision = revision;
+        // if (revision) session.revision = revision;
         session.approved = true;
 
         await session.save();
 
+        // Sync active goal and student profile position (if adjusted or approved by tutor)
+        const studentId = session.student.toString();
+        await updateStudentGoalAndProgress(studentId, session.newMemorization);
+
         revalidatePath("/dashboard");
+        revalidatePath(`/dashboard/sessions/${sessionId}`);
+
         return { success: true, message: "Session verified and saved" };
     } catch (error: any) {
         return { success: false, error: error.message || "Failed to verify session" };

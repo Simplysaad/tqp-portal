@@ -2,36 +2,65 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import Modal from "@/components/Modal"; // Adjust path as needed
+import Modal from "@/components/Modal";
 import EditSessionModalContent from "./EditSessionModalContent";
 import { verifyAndCompleteSession } from "@/actions/session.action";
-import { AttendanceStatus, PerformanceRating, ISession } from "@/models/session.model";
+import {
+    AttendanceStatus,
+    PerformanceRating,
+    ISession,
+    IMemorizationRange,
+} from "@/models/session.model";
+import { MemorizationPosition } from "@/lib/quran";
+
+interface StudentInfo {
+    name: string;
+}
 
 interface TutorSessionVerificationFormProps {
-    session: ISession & { _id: string; student: { name: string } };
+    session: Omit<ISession, "student"> & {
+        _id: string;
+        student?: StudentInfo | string;
+    };
     tutorId: string;
 }
 
-export default function TutorSessionVerificationForm({ session, tutorId }: TutorSessionVerificationFormProps) {
+export default function TutorSessionVerificationForm({
+    session,
+    tutorId,
+}: TutorSessionVerificationFormProps) {
     const router = useRouter();
 
     // Controlled Form State
-    const [attendance, setAttendance] = useState<AttendanceStatus>(session.attendance || "present");
-    const [performance, setPerformance] = useState<PerformanceRating>(session.performance || "good");
-    const [tutorsComment, setTutorsComment] = useState<string>(session.tutorsComment || "");
-    const [newMemorization, setNewMemorization] = useState(session.newMemorization);
-    const [revision, setRevision] = useState(session.revision);
+    const [attendance, setAttendance] = useState<AttendanceStatus>(
+        session.attendance || "present"
+    );
+    const [performance, setPerformance] = useState<PerformanceRating>(
+        session.performance || "good"
+    );
+    const [tutorsComment, setTutorsComment] = useState<string>(
+        session.tutorsComment || ""
+    );
+    const [newMemorization, setNewMemorization] = useState<
+        IMemorizationRange
+    >(session.newMemorization);
+    // const [revision, setRevision] = useState<IMemorizationRange | undefined>(
+    //     session.revision
+    // );
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const formatQuranPosition = (pos?: { surah?: string; aayah?: number; page?: number }) => {
+    const formatQuranPosition = (pos?: MemorizationPosition) => {
         if (!pos || !pos.surah) return "Not logged";
-        return `${pos.surah} (Ayah ${pos.aayah || 1}${pos.page ? `, Page ${pos.page}` : ""})`;
+        return `${pos.surah} (Ayah ${pos.aayah || 1}${pos.page ? `, Page ${pos.page}` : ""
+            })`;
     };
 
-    const handleSaveVerifiedSession = async (overrideAttendance?: AttendanceStatus) => {
+    const handleSaveVerifiedSession = async (
+        overrideAttendance?: AttendanceStatus
+    ) => {
         setLoading(true);
         setError(null);
 
@@ -42,8 +71,9 @@ export default function TutorSessionVerificationForm({ session, tutorId }: Tutor
             performance,
             tutorsComment,
             newMemorization,
-            revision,
+            // revision,
         });
+
 
         setLoading(false);
 
@@ -55,12 +85,22 @@ export default function TutorSessionVerificationForm({ session, tutorId }: Tutor
         }
     };
 
+    const studentName =
+        typeof session.student === "object" && session.student !== null
+            ? session.student.name
+            : "Student";
+
     return (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-6">
             <div className="flex justify-between items-start border-b pb-4">
                 <div>
-                    <h2 className="text-xl font-bold text-gray-900">Verify Session Log</h2>
-                    <p className="text-sm text-gray-500">Student: <span className="font-medium text-gray-800">{session.student?.name || "Student"}</span></p>
+                    <h2 className="text-xl font-bold text-gray-900">
+                        Verify Session Log
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                        Student:{" "}
+                        <span className="font-medium text-gray-800">{studentName}</span>
+                    </p>
                 </div>
                 <span className="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-full border border-amber-200">
                     Pending Verification
@@ -76,7 +116,9 @@ export default function TutorSessionVerificationForm({ session, tutorId }: Tutor
             {/* Student Logged Data Summary */}
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-3">
                 <div className="flex justify-between items-center">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Student Logged Progress</span>
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                        Student Logged Progress
+                    </span>
                     <button
                         type="button"
                         onClick={() => setIsEditModalOpen(true)}
@@ -88,26 +130,39 @@ export default function TutorSessionVerificationForm({ session, tutorId }: Tutor
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
-                        <span className="block text-xs text-gray-500">New Memorization:</span>
+                        <span className="block text-xs text-gray-500">
+                            New Memorization:
+                        </span>
                         <span className="font-medium text-gray-800">
-                            {formatQuranPosition(newMemorization?.start)} ➔ {formatQuranPosition(newMemorization?.end)}
+                            {formatQuranPosition(newMemorization?.start)} ➔{" "}
+                            {formatQuranPosition(newMemorization?.end)}
                         </span>
                     </div>
-                    <div>
+                    {/* <div>
                         <span className="block text-xs text-gray-500">Revision:</span>
                         <span className="font-medium text-gray-800">
-                            {formatQuranPosition(revision?.start)} ➔ {formatQuranPosition(revision?.end)}
+                            {formatQuranPosition(revision?.start)} ➔{" "}
+                            {formatQuranPosition(revision?.end)}
                         </span>
-                    </div>
+                    </div> */}
                 </div>
             </div>
 
             {/* Tutor Rating & Attendance Inputs */}
             <div className="space-y-4">
                 <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Attendance Status</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Attendance Status
+                    </label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {(["present", "partial", "absent", "cancelled"] as AttendanceStatus[]).map((status) => (
+                        {(
+                            [
+                                "present",
+                                "partial",
+                                "absent",
+                                "cancelled",
+                            ] as AttendanceStatus[]
+                        ).map((status) => (
                             <button
                                 key={status}
                                 type="button"
@@ -124,7 +179,9 @@ export default function TutorSessionVerificationForm({ session, tutorId }: Tutor
                 </div>
 
                 <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Performance Rating *</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Performance Rating *
+                    </label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {(
                             [
@@ -137,7 +194,9 @@ export default function TutorSessionVerificationForm({ session, tutorId }: Tutor
                             <button
                                 key={item.val}
                                 type="button"
-                                onClick={() => setPerformance(item.val as PerformanceRating)}
+                                onClick={() =>
+                                    setPerformance(item.val as PerformanceRating)
+                                }
                                 className={`py-2 text-xs font-medium rounded-lg border transition ${performance === item.val
                                     ? "bg-emerald-600 text-white border-emerald-600"
                                     : "border-gray-200 text-gray-700 hover:bg-gray-50"
@@ -150,7 +209,9 @@ export default function TutorSessionVerificationForm({ session, tutorId }: Tutor
                 </div>
 
                 <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">Tutor Feedback / Comment (Optional)</label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Tutor Feedback / Comment (Optional)
+                    </label>
                     <textarea
                         rows={3}
                         value={tutorsComment}
@@ -174,13 +235,17 @@ export default function TutorSessionVerificationForm({ session, tutorId }: Tutor
             </div>
 
             {/* Edit Session Modal */}
-            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Session Log">
+            <Modal
+                isOpen={isEditModalOpen}
+                onClose={() => setIsEditModalOpen(false)}
+                title="Edit Session Log"
+            >
                 <EditSessionModalContent
                     initialNewMem={newMemorization}
-                    initialRev={revision}
+                    // initialRev={revision}
                     onSave={(updatedNewMem, updatedRev) => {
                         setNewMemorization(updatedNewMem);
-                        setRevision(updatedRev);
+                        // setRevision(updatedRev);
                         setIsEditModalOpen(false);
                     }}
                     onClose={() => setIsEditModalOpen(false)}
