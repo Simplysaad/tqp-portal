@@ -20,7 +20,7 @@ interface StudentInfo {
 interface TutorSessionVerificationFormProps {
     session: Omit<ISession, "student"> & {
         _id: string;
-        student?: StudentInfo | string;
+        student?: any
     };
     tutorId: string;
 }
@@ -85,10 +85,9 @@ export default function TutorSessionVerificationForm({
         }
     };
 
-    const studentName =
-        typeof session.student === "object" && session.student !== null
-            ? session.student.name
-            : "Student";
+
+    const studentName = session.student?.user?.name ?? "Student";
+    // console.log("session.student", session.student)
 
     return (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-6">
@@ -98,8 +97,8 @@ export default function TutorSessionVerificationForm({
                         Verify Session Log
                     </h2>
                     <p className="text-sm text-gray-500">
-                        Student:{" "}
-                        <span className="font-medium text-gray-800">{studentName}</span>
+                        Student:
+                        <span className="font-medium text-gray-800 capitalize ms-1">{studentName}</span>
                     </p>
                 </div>
                 <span className="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-full border border-amber-200">

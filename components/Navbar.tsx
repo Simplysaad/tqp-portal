@@ -126,23 +126,22 @@ const Navbar = () => {
                 <div className="flex items-center justify-between h-16 sm:h-20">
 
                     {/* Brand Logo & Context Switcher */}
-                    <div className="flex items-center gap-8">
+                    <div className="flex items-start gap-8">
                         <Link href="/" className="flex items-center gap-3 group">
                             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-950 flex items-center justify-center text-amber-400 shadow-md shadow-emerald-950/20 group-hover:scale-105 transition-transform border border-amber-500/30">
                                 <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
                             </div>
                             <div className="flex flex-col">
                                 <div className="flex flex-col">
-                                    <div className="flex not-md:flex-col items-center gap-2">
+                                    <div className="flex not-md:flex-col items-start gap-2">
                                         <span className="font-bold text-lg sm:text-xl tracking-tight text-emerald-950">
                                             TQP <span className="text-amber-600 font-serif font-normal text-base sm:text-lg">Portal</span>
                                         </span>
-                                        {/* 
                                         {isAdminRoute && (
                                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
                                                 Restricted
                                             </span>
-                                        )} */}
+                                        )}
                                     </div>
                                     <span className="text-[10px] tracking-widest uppercase font-medium text-emerald-800/70 -mt-1">
                                         {isAdminRoute ? "Admin Operations" : "Tajweed & Retention"}

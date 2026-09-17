@@ -39,8 +39,9 @@ export default function UnapprovedSessionsList({ sessions }: UnapprovedSessionsL
                         className="flex items-center justify-between py-3 hover:bg-gray-50 px-2 rounded-lg transition group"
                     >
                         <div className="space-y-0.5">
-                            <p className="text-sm font-medium text-gray-800 group-hover:text-emerald-600 transition">
-                                {session.name || "Student"}
+
+                            <p className="text-sm capitalize font-medium text-gray-800 group-hover:text-emerald-600 transition">
+                                {(session.student as any)?.user.name || "Student"}
                             </p>
                             <p className="text-xs text-gray-400">
                                 Logged on {new Date(session.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}

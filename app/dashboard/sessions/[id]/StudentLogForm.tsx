@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import SearchableSelect from "@/components/SearchableSelect";
-import { logStudentProgress } from "@/actions/session.action";
+import { fetchStudentAction, logStudentProgress } from "@/actions/session.action";
 import { fetchMemorizationPositionAction } from "@/actions/quran.action"; // 👈 Import server action
 import { QURAN_SURAHS } from "@/lib/surah";
 import { MemorizationPosition } from "@/lib/quran";
@@ -57,10 +57,16 @@ export default function LogProgressForm({
 
 
     useEffect(() => {
-        let student = getStudent(studentId).then((student) => {
-            if (student?.currentMemorization) setStartPos(student?.currentMemorization)
-        })
-    }, [])
+        async function getStudentInfo() {
+            if (!studentId) return
+
+            const student = await fetchStudentAction(studentId)
+            if (student?.currentMemorization) {
+                setStartPos(student.currentMemorization)
+            }
+        }
+        getStudentInfo()
+    }, [studentId])
 
     useEffect(() => {
         let isMounted = true;

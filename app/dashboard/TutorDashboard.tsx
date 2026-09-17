@@ -32,7 +32,15 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
         .lean<IScheduleDocument[]>({ virtuals: true });
 
 
-    const rawSessions = await Session.find({ tutor: tutor._id }).lean()
+    const rawSessions = await Session.find({ tutor: tutor._id }).populate({
+        path: "student",
+        select: "_id",
+        populate: {
+            path: "user",
+            select: "_id name"
+        }
+    }).lean()
+
     const sessions = JSON.parse(JSON.stringify(rawSessions));
 
     return (

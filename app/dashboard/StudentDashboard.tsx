@@ -396,7 +396,7 @@ export default async function StudentDashboard({ userId }: StudentDashboardProps
             {/* Header & Status */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">
+                    <h1 className="text-2xl font-bold text-gray-900 capitalize">
                         {(student.user as any)?.name || "Student Dashboard"}
                     </h1>
                     <p className="text-gray-500 text-sm">
@@ -553,12 +553,14 @@ export default async function StudentDashboard({ userId }: StudentDashboardProps
                         ></div>
                     </div>
 
-                    <div className="flex justify-between text-xs text-gray-500 pt-1">
+                    <div className="flex justify-between items-center text-xs text-gray-500 pt-1">
                         <span>
                             Target Surah: <strong>{activeGoal.target.surah || "N/A"} ({activeGoal.target.aayah})</strong>
                         </span>
                         <span>
-                            Target Pages: <strong>{activeGoal.targetPages} Pages</strong>
+                            {/* Target Pages: <strong>{activeGoal.targetPages} Pages</strong>
+                            <br /> */}
+                            Target Pages: <strong>{Number(activeGoal.target?.page) - Number(activeGoal.current?.page)} Pages Remaining</strong>
                         </span>
                     </div>
                 </div>

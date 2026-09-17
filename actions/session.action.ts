@@ -263,7 +263,7 @@ export async function logStudentProgress(payload: IStudentLogPayload) {
 
 
         if (newMemorization) session.newMemorization = newMemorization;
-        if (revision) session.revision = revision;
+        // if (revision) session.revision = revision;
         await session.save();
 
         // Sync active goal and student profile position
@@ -318,5 +318,19 @@ export async function verifyAndCompleteSession(payload: ITutorVerifyPayload) {
         return { success: true, message: "Session verified and saved" };
     } catch (error: any) {
         return { success: false, error: error.message || "Failed to verify session" };
+    }
+}
+
+
+import { getStudent } from "@/lib/db"
+
+export async function fetchStudentAction(studentId: string) {
+    try {
+        const student = await getStudent(studentId)
+        // Convert Mongoose document to plain JavaScript object so it can cross the server-client boundary
+        return JSON.parse(JSON.stringify(student))
+    } catch (error) {
+        console.error(error)
+        return null
     }
 }
