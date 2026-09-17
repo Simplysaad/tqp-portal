@@ -21,11 +21,10 @@ export default async function AssignmentsPage() {
         TutorGroup.find({ isActive: true }).populate("students").lean(),
     ]);
 
-    // console.log("unassignedStudents", unassignedStudents)
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-200 pb-5">
+            <div className="flex not-md:flex-col not-md:items-start gap-4 items-center justify-between border-b border-zinc-200 pb-5">
                 <div>
                     <h1 className="text-2xl font-bold text-zinc-900">Assignment Operations Workspace</h1>
                     <p className="text-sm text-zinc-500 mt-1">Manual student placement and group reassignments.</p>

@@ -19,10 +19,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     return (
-        <div className="flex-1 flex flex-col min-h-screen bg-[#FBFBF9]">
-            {/* Responsive Header & Navigation */}
-            <AdminNav userEmail={user.email} />
-
+        <div className="flex-1 justify-center align-center flex flex-col min-h-screen bg-[#FBFBF9]">
             {/* Main Content Area */}
             <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
                 {children}

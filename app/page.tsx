@@ -1,4 +1,3 @@
-import React from "react";
 import Link from "next/link";
 import {
     BookOpen,
@@ -6,19 +5,15 @@ import {
     CheckCircle2,
     Clock,
     ShieldCheck,
-    Users,
     Video,
     ArrowRight,
     GraduationCap,
-    ChevronRight,
     FileCheck2,
     Activity,
-    Compass,
     Layers,
     UserCheck,
     LogIn,
     MessageSquare,
-    AlertCircle,
     Building2,
 } from "lucide-react";
 
@@ -35,49 +30,6 @@ export const metadata: Metadata = generateOSFAMetadata({
 export default function LandingPage() {
     return (
         <div className="min-h-screen bg-[#FBFBF9] text-gray-900 selection:bg-amber-100 selection:text-amber-900 font-sans antialiased">
-            {/* =========================================================================
-              HEADER / NAVIGATION
-             ========================================================================= */}
-            <header className="sticky top-0 z-50 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-amber-900/10">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
-                    <Link href="/" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 rounded-xl bg-emerald-950 flex items-center justify-center text-amber-400 shadow-md shadow-emerald-950/20 group-hover:scale-105 transition-transform border border-amber-500/30">
-                            <BookOpen className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <span className="font-bold text-xl tracking-tight text-emerald-950 block leading-tight">
-                                TQP
-                            </span>
-                            <span className="text-[10px] sm:text-xs font-medium text-emerald-800/80 uppercase tracking-wider block">
-                                Islamic Affairs Board • MSSN OAU
-                            </span>
-                        </div>
-                    </Link>
-
-                    <div className="flex items-center gap-3 sm:gap-4">
-                        <Link
-                            href="#how-it-works"
-                            className="hidden md:inline-flex text-xs sm:text-sm font-semibold text-gray-700 hover:text-emerald-950 transition-colors"
-                        >
-                            How It Works
-                        </Link>
-                        <Link
-                            href="#programme-value"
-                            className="hidden md:inline-flex text-xs sm:text-sm font-semibold text-gray-700 hover:text-emerald-950 transition-colors"
-                        >
-                            Accountability
-                        </Link>
-                        <Link
-                            href="/login"
-                            className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl border border-gray-300 text-emerald-950 font-semibold text-xs sm:text-sm hover:bg-emerald-50 transition flex items-center gap-2"
-                        >
-                            <LogIn className="w-4 h-4 text-emerald-800" />
-                            <span>Log in</span>
-                        </Link>
-                    </div>
-                </div>
-            </header>
-
             {/* =========================================================================
               HERO SECTION: Institutional Programme Identity
              ========================================================================= */}

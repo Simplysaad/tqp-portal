@@ -10,23 +10,39 @@ import {
     Menu,
     X,
     ChevronDown,
+    LogIn,
+    Zap,
+    Users,
+    UserCheck,
 } from "lucide-react";
 import { getSession, logoutUser } from "@/actions/user.action";
 
 interface UserProfile {
     name: string;
     email: string;
-    role: "student" | "tutor";
+    role: "student" | "tutor" | "admin";
     whatsappNumber?: string;
 }
+
+const mainNavLinks = [
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+];
+
+const adminNavLinks = [
+    { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+    { name: "Auto-Assign Engine", href: "/admin/assignments", icon: Zap },
+    { name: "Tutor Groups", href: "/admin/groups", icon: Users },
+    { name: "Students List", href: "/admin/students", icon: UserCheck },
+];
 
 const Navbar = () => {
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-    // Auth pages check (Updated /signup -> /register based on test report)
     const isAuthPage = pathname === "/login" || pathname === "/register";
+    const isLandingPage = pathname === "/" || pathname === "/landing";
+    const isAdminRoute = pathname.startsWith("/admin");
 
     const [user, setUser] = useState<UserProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -36,9 +52,7 @@ const Navbar = () => {
 
         getSession()
             .then((data) => {
-                if (isMounted) {
-                    setUser(data as UserProfile | null);
-                }
+                if (isMounted) setUser(data as UserProfile | null);
             })
             .catch((error) => {
                 console.error("Failed to fetch session:", error);
@@ -59,57 +73,86 @@ const Navbar = () => {
         await logoutUser();
     };
 
-    // Valid, working navigation links (Removed /attendance due to 404)
-    const navLinks = [
-        { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    ];
+    const navLinks = isAdminRoute ? adminNavLinks : mainNavLinks;
+
+    if (isLandingPage) {
+        return (
+            <header className="sticky top-0 z-50 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-amber-900/10">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-3 group">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-950 flex items-center justify-center text-amber-400 shadow-md shadow-emerald-950/20 group-hover:scale-105 transition-transform border border-amber-500/30">
+                            <BookOpen className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <span className="font-bold text-xl tracking-tight text-emerald-950 block leading-tight">
+                                TQP <span className="text-amber-600 font-serif font-normal text-base sm:text-lg">Portal</span>
+                            </span>
+                            <span className="text-[10px] sm:text-xs font-medium text-emerald-800/80 uppercase tracking-wider block">
+                                The Qur'an Program
+                                {/* Tajweed and Memorization */}
+                            </span>
+                        </div>
+                    </Link>
+
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <Link
+                            href="#how-it-works"
+                            className="hidden md:inline-flex text-xs sm:text-sm font-semibold text-gray-700 hover:text-emerald-950 transition-colors"
+                        >
+                            How It Works
+                        </Link>
+                        <Link
+                            href="#programme-value"
+                            className="hidden md:inline-flex text-xs sm:text-sm font-semibold text-gray-700 hover:text-emerald-950 transition-colors"
+                        >
+                            Accountability
+                        </Link>
+                        <Link
+                            href="/login"
+                            className="px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl border border-gray-300 text-emerald-950 font-semibold text-xs sm:text-sm hover:bg-emerald-50 transition flex items-center gap-2"
+                        >
+                            <LogIn className="not-md:hidden w-4 h-4 text-emerald-800" />
+                            <span>Log in</span>
+                        </Link>
+                    </div>
+                </div>
+            </header>
+        );
+    }
 
     return (
-        <header className="sticky top-0 z-50 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-amber-900/10 transition-all">
+        <header className="sticky shadow pb-4 top-0 z-50 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-amber-900/10 transition-all">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16 sm:h-20">
 
-                    {/* Brand Logo */}
+                    {/* Brand Logo & Context Switcher */}
                     <div className="flex items-center gap-8">
                         <Link href="/" className="flex items-center gap-3 group">
                             <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-950 flex items-center justify-center text-amber-400 shadow-md shadow-emerald-950/20 group-hover:scale-105 transition-transform border border-amber-500/30">
                                 <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="font-bold text-lg sm:text-xl tracking-tight text-emerald-950">
-                                    TQP <span className="text-amber-600 font-serif font-normal text-base sm:text-lg">Portal</span>
-                                </span>
-                                <span className="text-[10px] tracking-widest uppercase font-medium text-emerald-800/70 -mt-1">
-                                    Tajweed & Retention
-                                </span>
+                                <div className="flex flex-col">
+                                    <div className="flex not-md:flex-col items-center gap-2">
+                                        <span className="font-bold text-lg sm:text-xl tracking-tight text-emerald-950">
+                                            TQP <span className="text-amber-600 font-serif font-normal text-base sm:text-lg">Portal</span>
+                                        </span>
+                                        {/* 
+                                        {isAdminRoute && (
+                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                                Restricted
+                                            </span>
+                                        )} */}
+                                    </div>
+                                    <span className="text-[10px] tracking-widest uppercase font-medium text-emerald-800/70 -mt-1">
+                                        {isAdminRoute ? "Admin Operations" : "Tajweed & Retention"}
+                                    </span>
+                                </div>
                             </div>
                         </Link>
-
-                        {/* Desktop Navigation Links */}
-                        {!isAuthPage && user && (
-                            <nav className="hidden md:flex items-center space-x-1">
-                                {navLinks.map((link) => {
-                                    const Icon = link.icon;
-                                    const isActive = pathname === link.href;
-                                    return (
-                                        <Link
-                                            key={link.name}
-                                            href={link.href}
-                                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs uppercase tracking-wider font-semibold transition-all ${isActive
-                                                ? "bg-emerald-900/10 text-emerald-950 border border-emerald-900/20 shadow-sm"
-                                                : "text-emerald-900/70 hover:bg-emerald-900/5 hover:text-emerald-950"
-                                                }`}
-                                        >
-                                            <Icon className="w-4 h-4 text-emerald-800" />
-                                            <span>{link.name}</span>
-                                        </Link>
-                                    );
-                                })}
-                            </nav>
-                        )}
                     </div>
 
-                    {/* Desktop Action CTAs / User Dropdown */}
+                    {/* Desktop User Action Menu */}
                     <div className="hidden md:flex items-center gap-2 sm:gap-4">
                         {user ? (
                             <div className="relative">
@@ -117,7 +160,7 @@ const Navbar = () => {
                                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                                     className="flex items-center gap-3 p-1.5 pr-3 rounded-xl hover:bg-emerald-900/5 border border-transparent hover:border-emerald-900/10 transition cursor-pointer"
                                 >
-                                    <div className="w-9 h-9 rounded-lg bg-emerald-950 text-amber-400 font-bold text-sm flex items-center justify-center shadow-sm">
+                                    <div className="w-9 h-9 rounded-lg bg-emerald-950 text-amber-400 font-bold text-sm flex items-center justify-center shadow-xs">
                                         {user.name?.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="text-left leading-tight">
@@ -134,10 +177,8 @@ const Navbar = () => {
                                     />
                                 </button>
 
-                                {/* Profile Dropdown Menu */}
                                 {isProfileOpen && (
                                     <>
-                                        {/* Backdrop to dismiss menu */}
                                         <div
                                             className="fixed inset-0 z-40"
                                             onClick={() => setIsProfileOpen(false)}
@@ -150,17 +191,12 @@ const Navbar = () => {
                                                 <p className="text-xs font-bold text-emerald-950 truncate">
                                                     {user.email}
                                                 </p>
-                                                {user.whatsappNumber && (
-                                                    <p className="text-[11px] text-emerald-800/70 mt-0.5">
-                                                        {user.whatsappNumber}
-                                                    </p>
-                                                )}
                                             </div>
 
                                             <div className="py-1">
                                                 <button
                                                     onClick={handleLogout}
-                                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-rose-600 hover:bg-rose-50 transition cursor-pointer text-left"
+                                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs text-rose-600 hover:bg-rose-50 transition cursor-pointer text-left font-medium"
                                                 >
                                                     <LogOut className="w-4 h-4" />
                                                     <span>Sign Out</span>
@@ -188,7 +224,7 @@ const Navbar = () => {
                         )}
                     </div>
 
-                    {/* Mobile Menu Toggle Button */}
+                    {/* Mobile Menu Toggle */}
                     <div className="md:hidden flex items-center">
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -202,7 +238,30 @@ const Navbar = () => {
                             )}
                         </button>
                     </div>
-
+                </div>
+                <div className="">
+                    {/* Desktop Dynamic Navigation */}
+                    {!isAuthPage && user && (
+                        <nav className="hidden md:flex overflow-x-hidden items-end justify-end space-x-1">
+                            {navLinks.map((link) => {
+                                const Icon = link.icon;
+                                const isActive = pathname === link.href;
+                                return (
+                                    <Link
+                                        key={link.name}
+                                        href={link.href}
+                                        className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs uppercase tracking-wider font-semibold transition-all ${isActive
+                                            ? "bg-emerald-900/10 text-emerald-950 border border-emerald-900/20 shadow-xs"
+                                            : "text-emerald-900/70 hover:bg-emerald-900/5 hover:text-emerald-950"
+                                            }`}
+                                    >
+                                        <Icon className="w-4 h-4 text-emerald-800" />
+                                        <span>{link.name}</span>
+                                    </Link>
+                                );
+                            })}
+                        </nav>
+                    )}
                 </div>
             </div>
 
@@ -211,7 +270,7 @@ const Navbar = () => {
                 <div className="md:hidden border-t border-amber-900/10 bg-[#FBFBF9] px-4 pt-3 pb-6 space-y-4">
                     {user && (
                         <div className="p-3 rounded-xl bg-emerald-900/5 border border-emerald-900/10 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-emerald-950 text-amber-400 flex items-center justify-center font-bold text-base shadow-sm">
+                            <div className="w-10 h-10 rounded-lg bg-emerald-950 text-amber-400 flex items-center justify-center font-bold text-base shadow-xs">
                                 {user.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="text-left leading-tight min-w-0">
@@ -270,7 +329,7 @@ const Navbar = () => {
                             <Link
                                 href="/enroll"
                                 onClick={() => setIsMobileMenuOpen(false)}
-                                className="py-2.5 text-center text-xs font-semibold uppercase tracking-wider bg-emerald-900 text-white rounded-xl hover:bg-emerald-950 transition shadow-sm"
+                                className="py-2.5 text-center text-xs font-semibold uppercase tracking-wider bg-emerald-900 text-white rounded-xl hover:bg-emerald-950 transition shadow-xs"
                             >
                                 Find a Tutor
                             </Link>

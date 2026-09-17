@@ -50,7 +50,7 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
             </div>
 
             {/* Quick Action: Start/Activate Session */}
-            <div className="p-5 border rounded-lg bg-emerald-50 border-emerald-200 flex justify-between items-center">
+            <div className="p-5 border rounded-lg bg-emerald-50 border-emerald-200 not-md:flex-col not-md:gap-4 flex justify-between  items-center">
                 <div>
                     <h3 className="font-semibold text-emerald-900">Start Today's Session</h3>
                     <p className="text-sm text-emerald-700">

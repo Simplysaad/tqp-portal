@@ -33,7 +33,7 @@ export default async function TutorGroupDetailPage({ params }: { params: { id: s
     const maxCapacity = group.rules?.maxCapacity || 5;
 
     return (
-        <div className="p-8 max-w-5xl mx-auto space-y-6">
+        <div className="max-w-5xl mx-auto space-y-6">
             <Link href="/admin/groups" className="inline-flex items-center gap-2 text-xs font-medium text-zinc-500 hover:text-zinc-900 transition-colors">
                 <ArrowLeft className="w-4 h-4" /> Back to All Groups
             </Link>

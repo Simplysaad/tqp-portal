@@ -1,7 +1,7 @@
 import Link from "next/link";
 import connectDB from "@/lib/db";
 import Student from "@/models/student.model";
-import { User, CheckCircle2, ShieldAlert } from "lucide-react";
+import { User, CheckCircle2, ShieldAlert, Mars, Venus } from "lucide-react";
 import { generateOSFAMetadata } from "@/lib/metadata";
 
 export const revalidate = 0;
@@ -18,7 +18,7 @@ export default async function StudentsDirectoryPage() {
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-200 pb-5">
+            <div className="flex not-md:flex-col not-md:items-start gap-4 items-center justify-between border-b border-zinc-200 pb-5">
                 <div>
                     <h1 className="text-2xl font-bold text-zinc-900">Students Directory</h1>
                     <p className="text-sm text-zinc-500 mt-1">Manage all registered student records and group assignments.</p>
@@ -55,8 +55,17 @@ export default async function StudentsDirectoryPage() {
                                     <tr key={student._id.toString()} className="hover:bg-zinc-50/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-zinc-100 rounded-full text-zinc-600">
-                                                    <User className="w-4 h-4" />
+                                                <div className="relative inline-block">
+                                                    <div className="p-2 bg-zinc-100 rounded-full text-zinc-600">
+                                                        <User className="w-5 h-5" />
+                                                    </div>
+                                                    <span className="absolute -bottom-1 -right-1 p-0.5 bg-white rounded-full shadow-xs">
+                                                        {student.gender === "male" ? (
+                                                            <Mars className="w-3.5 h-3.5 text-blue-600" />
+                                                        ) : (
+                                                            <Venus className="w-3.5 h-3.5 text-pink-600" />
+                                                        )}
+                                                    </span>
                                                 </div>
                                                 <div>
                                                     <p className="font-medium text-zinc-900">{userName}</p>

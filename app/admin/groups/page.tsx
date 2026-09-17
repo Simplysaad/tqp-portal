@@ -20,7 +20,7 @@ export default async function GroupsDirectoryPage() {
 
     return (
         <div className="p-8 max-w-7xl mx-auto space-y-6">
-            <div className="flex items-center justify-between border-b border-zinc-200 pb-5">
+            <div className="flex not-md:flex-col not-md:items-start gap-4 items-center justify-between border-b border-zinc-200 pb-5">
                 <div>
                     <h1 className="text-2xl font-bold text-zinc-900">Tutor Groups</h1>
                     <p className="text-sm text-zinc-500 mt-1">Manage learning units, capacity constraints, and group rules.</p>
