@@ -555,7 +555,7 @@ export default async function StudentDashboard({ userId }: StudentDashboardProps
 
                     <div className="flex justify-between text-xs text-gray-500 pt-1">
                         <span>
-                            Target Surah: <strong>{activeGoal.target.surah || "N/A"}</strong>
+                            Target Surah: <strong>{activeGoal.target.surah || "N/A"} ({activeGoal.target.aayah})</strong>
                         </span>
                         <span>
                             Target Pages: <strong>{activeGoal.targetPages} Pages</strong>

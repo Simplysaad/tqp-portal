@@ -9,13 +9,12 @@ import { Calendar, Clock } from "lucide-react";
 
 import { generateOSFAMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
+
 export const metadata: Metadata = generateOSFAMetadata({
     path: "/enroll",
     title: "Enroll with a tutor | TQP System",
     description: "Explore available study circles, check capacity rules, and join your assigned learning group.",
-})
-
-
+});
 
 function minutesToTime(minutes: number): string {
     const hours = Math.floor(minutes / 60);
@@ -43,7 +42,7 @@ export default async function EnrollPage({ searchParams }: PageProps) {
         redirect("/dashboard");
     }
 
-    // 2. Direct Server Action Flow (When tutor_id is provided in URL params)
+    // 2. Direct Server Action Flow
     if (tutor_id) {
         const res = await enrollWithTutor(tutor_id);
 
@@ -54,21 +53,23 @@ export default async function EnrollPage({ searchParams }: PageProps) {
         }
     }
 
-    // 3. Fallback: Fetch student record & populated tutor groups for selection UI
-    let currentStudentId: string | null = null;
+    // 3. Fetch student record
     const student = await Student.findOne({ user: currentUser.id }).lean();
-    if (student) {
-        currentStudentId = student._id.toString();
+    if (!student) {
+        redirect("/dashboard?error=" + encodeURIComponent("Student profile not found."));
     }
 
-    const isCurrentlyEnrolled = Boolean(student?.tutor)
+    const currentStudentId = student._id.toString();
+    const isCurrentlyEnrolled = Boolean(student?.tutor);
 
     if (isCurrentlyEnrolled) {
-        // <RequestTutorChangeModal/>
-        redirect(`/dashboard?message=User is already enrolled with a tutor!`);
+        redirect(`/dashboard?message=${encodeURIComponent("User is already enrolled with a tutor!")}`);
     }
 
-    // Populate both sibling references ('tutor' with nested 'user', and 'schedules')
+    const getIsEligibleGender = (isFemaleOnly?: boolean) =>
+        isFemaleOnly ? student.gender === "female" : true;
+
+    // Fetch tutor groups
     const tutorGroups = await TutorGroup.find({ isActive: true })
         .populate({
             path: "tutor",
@@ -105,21 +106,28 @@ export default async function EnrollPage({ searchParams }: PageProps) {
                     const tutor = tutorGroup.tutor;
                     const tutorIdStr = tutor?._id ? tutor._id.toString() : "";
                     const groupSchedules = tutorGroup.schedules || [];
-
-                    // Retrieve enrolled students directly from tutorGroup
                     const enrolledStudents = tutorGroup.students || [];
                     const totalEnrolled = enrolledStudents.length;
 
-                    // Capacity calculation
                     const maxCapacity = tutorGroup.rules?.maxCapacity || 5;
+                    const isFemaleOnly = tutorGroup.rules?.femaleOnly;
+                    const isEligibleGender = getIsEligibleGender(isFemaleOnly);
                     const isFilled = totalEnrolled >= maxCapacity;
 
-                    // Enrollment check
-                    const isAlreadyEnrolled = currentStudentId
-                        ? enrolledStudents.some(
-                            (st: any) => (st._id ? st._id.toString() : st.toString()) === currentStudentId
-                        )
-                        : false;
+                    if (isFilled || !isEligibleGender) {
+                        return null;
+                    }
+
+                    // More checks to come; like isMemorizationRangeEligible etc.
+
+                    // for isMemorizationRangeEligible: 
+                    // check the student.currentMemorization < tutor.memorizationRange.start
+                    // check the student.expectedMemorization < tutor.memorizationRange.end
+                    // 
+
+                    const isAlreadyEnrolled = enrolledStudents.some(
+                        (st: any) => (st._id ? st._id.toString() : st.toString()) === currentStudentId
+                    );
 
                     return (
                         <div
@@ -138,17 +146,25 @@ export default async function EnrollPage({ searchParams }: PageProps) {
                                         </h2>
                                         <p className="text-xs text-gray-500">{tutor?.bio}</p>
                                     </div>
-                                    <span
-                                        className={`text-xs px-2.5 py-1 rounded-full font-bold ${isFilled
-                                            ? "bg-red-100 text-red-700"
-                                            : "bg-emerald-100 text-emerald-800"
-                                            }`}
-                                    >
-                                        {totalEnrolled} / {maxCapacity} Enrolled
-                                    </span>
+
+                                    {/* Badges Container */}
+                                    <div className="flex items-center gap-2">
+                                        {isFemaleOnly && (
+                                            <span className="text-xs px-2.5 py-1 rounded-full font-bold bg-pink-100 text-pink-700 border border-pink-200">
+                                                Female Only
+                                            </span>
+                                        )}
+                                        <span
+                                            className={`text-xs px-2.5 py-1 rounded-full font-bold ${isFilled
+                                                ? "bg-red-100 text-red-700"
+                                                : "bg-emerald-100 text-emerald-800"
+                                                }`}
+                                        >
+                                            {totalEnrolled} / {maxCapacity} Enrolled
+                                        </span>
+                                    </div>
                                 </div>
 
-                                {/* Timetable Section */}
                                 <div className="space-y-2">
                                     <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                         Weekly Class Timetable
@@ -179,7 +195,6 @@ export default async function EnrollPage({ searchParams }: PageProps) {
                                 </div>
                             </div>
 
-                            {/* Action Button */}
                             <EnrollTutorButton
                                 tutorId={tutorIdStr}
                                 isFilled={isFilled}
