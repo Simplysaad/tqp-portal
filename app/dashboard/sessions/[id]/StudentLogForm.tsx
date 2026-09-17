@@ -7,6 +7,7 @@ import { fetchMemorizationPositionAction } from "@/actions/quran.action"; // ğŸ‘
 import { QURAN_SURAHS } from "@/lib/surah";
 import { MemorizationPosition } from "@/lib/quran";
 import { IStudentLogPayload } from "@/types";
+import { getStudent } from "@/lib/db";
 
 interface LogProgressFormProps {
     sessionId: string;
@@ -53,6 +54,14 @@ export default function LogProgressForm({
     const endMaxAyahs = useMemo(() => getMaxAyahs(endPos.surah), [endPos.surah]);
 
     // Derive Start Page
+
+
+    useEffect(() => {
+        let student = getStudent(studentId).then((student) => {
+            if (student?.currentMemorization) setStartPos(student?.currentMemorization)
+        })
+    }, [])
+
     useEffect(() => {
         let isMounted = true;
 

@@ -3,6 +3,7 @@ import "@/models/user.model";
 import "@/models/tutor.model";
 import "@/models/student.model";
 import "@/models/tutorGroup.model";
+import Student from "@/models/student.model";
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
@@ -55,4 +56,9 @@ export default async function connectDB(): Promise<typeof mongoose> {
         console.error("MongoDB Connection Error:", error);
         throw error; // CRITICAL: Re-throw so server actions catch connection failures
     }
+}
+
+export async function getStudent(studentId: string) {
+    const student = await Student.findOne({ _id: studentId })
+    return student
 }
