@@ -213,14 +213,23 @@ export function calculateMemorizationProgress(
     currentPage?: number,
     targetPage?: number
 ): number {
-    if (!startPage || !currentPage || !targetPage) return 0;
-    if (targetPage <= startPage) return 100;
+    if (
+        startPage === undefined ||
+        currentPage === undefined ||
+        targetPage === undefined
+    ) {
+        return 0;
+    }
 
-    const completed = currentPage - startPage;
-    const total = targetPage - startPage;
+    const totalPages = Math.abs(targetPage - startPage);
 
-    if (total <= 0) return 0;
+    if (totalPages === 0) return 100;
 
-    const percentage = (completed / total) * 100;
+    const isForward = targetPage > startPage;
+    const completedPages = isForward
+        ? currentPage - startPage
+        : startPage - currentPage;
+
+    const percentage = (completedPages / totalPages) * 100;
     return Math.min(100, Math.max(0, Math.round(percentage)));
 }
