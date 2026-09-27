@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
     completeStudentOnboarding,
     lookupMemorizationPosition,
@@ -10,6 +10,7 @@ import SearchableSelect from "@/components/SearchableSelect";
 import { QURAN_SURAHS } from "@/lib/surah";
 import { getDepartments, getFaculties } from "@/lib/faculties";
 import { MemorizationPosition } from "@/lib/quran";
+import BeginnerOnboardingForm from "./BeginnerOnboarding";
 
 export interface FormState {
     gender: "male" | "female" | "";
@@ -73,6 +74,12 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
         currentMemorization: { surah: "", aayah: 0, juz: 0, page: 0 },
         expectedMemorization: { surah: "", aayah: 0, juz: 0, page: 0 },
     });
+    const searchParams = useSearchParams();
+
+    const program = searchParams.get("program");
+    const isBeginnerProgram = program === "beginner"
+
+    if (!isBeginnerProgram) return <BeginnerOnboardingForm userId={userId} />
 
     // Callbacks for updating automatic juz and page fields safely
     const handleCurrentUpdate = useCallback((juz: number, page: number) => {

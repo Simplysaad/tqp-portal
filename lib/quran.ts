@@ -25,6 +25,12 @@ export interface MemorizationPosition {
     page?: number | string;
 }
 
+export interface NurulBayanPosition {
+    chapterNumber: number      // e.g., Chapter 1: Fathah, Chapter 2: Kasrah
+    chapterTitle?: string    // e.g., "Short Vowels (Harakat)"
+    sectionTitle?: string
+}
+
 const QF_ENV: QfEnv =
     process.env.QF_ENV === "production" ? "production" : "prelive";
 

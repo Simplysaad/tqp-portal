@@ -5,10 +5,11 @@ import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import Student from "@/models/student.model";
 import { getSession } from "./user.action";
-import Goal from "@/models/goal.model";
+import Goal, { IGoal } from "@/models/goal.model";
 import User from "@/models/user.model";
 import { QURAN_SURAHS } from "@/lib/surah";
 import { getMemorizationPosition, MemorizationPosition } from "@/lib/quran";
+import { NuruAlBayanPosition } from "@/app/onboarding/BeginnerOnboarding";
 
 
 export interface CompleteStudentOnboardingInput {
@@ -18,7 +19,7 @@ export interface CompleteStudentOnboardingInput {
     faculty?: string;
     department?: string;
     level?: number;
-    currentMemorization?: MemorizationPosition;
+    currentMemorization?: MemorizationPosition
     expectedMemorization?: MemorizationPosition;
 }
 
@@ -151,6 +152,111 @@ export async function lookupMemorizationPosition(surah: string, aayah: number) {
         return {
             success: false as const,
             message: error?.message || "Failed to look up position.",
+        };
+    }
+}
+
+
+export interface CompleteBeginnerOnboardingInput {
+    userId: string;
+    gender: "male" | "female";
+    matricNumber?: string;
+    faculty?: string;
+    department?: string;
+    level?: number;
+    currentPosition?: NuruAlBayanPosition;
+    expectedPosition?: NuruAlBayanPosition;
+}
+
+export async function completeBeginnerOnboarding(
+    data: CompleteBeginnerOnboardingInput
+) {
+    try {
+        await connectDB();
+
+        // 1. Authenticate & Verify User Session
+        const currentUser = await getSession();
+        if (!currentUser) {
+            return { success: false, message: "Unauthorized request." };
+        }
+
+        const { id: userId } = currentUser;
+        const userObjectId = new mongoose.Types.ObjectId(userId);
+
+        // 2. Check for Existing Student
+        const existingStudent = await Student.findOne({ user: userObjectId });
+        if (existingStudent) {
+            return {
+                success: false,
+                message: "Student profile already exists for this user.",
+            };
+        }
+
+        // Default fallback position for Nur Al-Bayan (Index 1, Alphabet, Page 2)
+        const defaultPosition: NuruAlBayanPosition = {
+            index: 1,
+            section: "المقدمة (Introduction & Alphabet)",
+            chapter: "الحروف الهجائية (Arabic Alphabet - Names & Shapes)",
+            page: 2,
+        };
+
+        const currentPosition = data.currentPosition || defaultPosition;
+        const targetPosition = data.expectedPosition || defaultPosition;
+
+        // 3. Create Student Profile
+        const newStudent = await Student.create({
+            user: userObjectId,
+            gender: data.gender,
+            matricNumber: data.matricNumber?.trim() || undefined,
+            faculty: data.faculty,
+            department: data.department,
+            level: data.level ? Number(data.level) : undefined,
+            currentPosition,
+            program: "beginner",
+            status: "active",
+        });
+
+        // 4. Calculate Distance Metrics
+        // Target chapters = total number of topics/units to cover
+        const targetChapters = Math.abs(
+            (targetPosition.index ?? 1) - (currentPosition.index ?? 1)
+        );
+
+        // Target pages = total pages in Nur Al-Bayan book to traverse
+        const targetPages = Math.abs(
+            (targetPosition.page ?? 0) - (currentPosition.page ?? 0)
+        );
+
+        // 5. Create Initial Semester Goal for Beginner Program
+        const newGoal: IGoal = await Goal.create({
+            student: newStudent._id,
+            semester: "Harmattan",
+            type: "nuru_al_bayan",
+            title: "My Nur Al-Bayan Reading Goal",
+            start: currentPosition,
+            current: currentPosition,
+            target: targetPosition,
+            targetPages,
+            targetChapters,
+        });
+
+        // 6. Update User Onboarding Status
+        await User.findByIdAndUpdate(userObjectId, {
+            role: "student",
+            isOnboarded: true,
+        });
+
+        revalidatePath("/dashboard");
+        return {
+            success: true,
+            studentId: String(newStudent._id),
+            goalId: String((newGoal as any)._id),
+        };
+    } catch (error: any) {
+        console.error("Error completing beginner onboarding:", error);
+        return {
+            success: false,
+            message: error.message || "Failed to create beginner student profile.",
         };
     }
 }

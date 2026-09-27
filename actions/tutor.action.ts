@@ -11,6 +11,23 @@ import { timeStringToMinutes } from "@/lib/time";
 import TutorGroup from "@/models/tutorGroup.model";
 
 
+
+import Goal from "@/models/goal.model";
+import User from "@/models/user.model";
+import { NuruAlBayanPosition } from "@/app/onboarding/BeginnerOnboarding";
+
+export interface CompleteBeginnerOnboardingInput {
+    userId: string;
+    gender: "male" | "female";
+    matricNumber?: string;
+    faculty?: string;
+    department?: string;
+    level?: number;
+    currentPosition?: NuruAlBayanPosition;
+    expectedPosition?: NuruAlBayanPosition;
+}
+
+
 export interface CompleteTutorOnboardingInput {
     userId: string;
     gender: "male" | "female";

@@ -121,3 +121,4 @@ export const QURAN_SURAHS: Surah[] = [
     { number: 113, name: "Al-Falaq", arabicName: "الفلق", totalAayahs: 5 },
     { number: 114, name: "An-Nas", arabicName: "الناس", totalAayahs: 6 }
 ];
+

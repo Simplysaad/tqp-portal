@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model, model, Types } from "mongoose";
 import { MemorizationPosition } from "@/lib/quran";
 
-export type GoalType = "memorization" | "revision" | "attendance";
+export type GoalType = "memorization" | "revision" | "attendance" | "nuru_al_bayan";
 export type GoalStatus = "in_progress" | "completed" | "abandoned";
 
 export interface IGoal {
@@ -14,6 +14,7 @@ export interface IGoal {
     target: MemorizationPosition;
     targetPages: number;
     targetVerses: number;
+    targetChapters: number;
     startDate: Date;
     targetDate: Date;
     status: GoalStatus;

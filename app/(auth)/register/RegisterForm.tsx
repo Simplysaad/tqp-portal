@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, ChangeEvent, FormEvent } from "react";
+import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { registerUser } from "@/actions/user.action";
@@ -21,19 +21,34 @@ export function RegisterForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const next = searchParams.get("next");
+    const role = searchParams.get("role");
+    const program = searchParams.get("program");
+    const isBeginnerProgram = program === "beginner"
+
+
+    const isRoleCorrect = role && (role === "student" || role === "tutor");
 
     const [formData, setFormData] = useState<IUser>({
         name: "",
         email: "",
         whatsappNumber: "",
         password: "",
-        role: "student",
+        role: isRoleCorrect ? (role as "student" | "tutor") : "student",
         isActive: true,
         isOnboarded: false,
     });
 
+    useEffect(() => {
+        if (isRoleCorrect) {
+            setFormData((prevData) => ({
+                ...prevData,
+                role: role as "student" | "tutor",
+            }));
+        }
+    }, [role, isRoleCorrect]);
+
     const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : "/login";
-    const onboardingHref = next ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding";
+    const onboardingHref = next ? `/onboarding?next=${encodeURIComponent(next)}` : program ? `/onboarding?program=${encodeURIComponent(program || "")}` : "/onboarding"
 
     const [loading, setLoading] = useState<boolean>(false);
 
@@ -46,6 +61,7 @@ export function RegisterForm() {
     };
 
     const handleRoleSelect = (selectedRole: "student" | "tutor") => {
+        if (isRoleCorrect) return;
         setFormData((prevData) => ({
             ...prevData,
             role: selectedRole,
@@ -91,10 +107,11 @@ export function RegisterForm() {
                     <div className="grid grid-cols-2 gap-3">
                         <button
                             type="button"
+                            disabled={Boolean(isRoleCorrect)}
                             onClick={() => handleRoleSelect("student")}
-                            className={`relative flex flex-col items-center justify-center p-3.5 rounded-xl cursor-pointer text-center transition-all ${formData.role === "student"
+                            className={`relative flex flex-col items-center justify-center p-3.5 rounded-xl text-center transition-all disabled:cursor-not-allowed disabled:opacity-75 ${formData.role === "student"
                                 ? "border-2 border-emerald-900 bg-emerald-50/60 text-emerald-950 shadow-sm"
-                                : "border border-gray-200 hover:border-emerald-700/40 bg-white text-gray-600 hover:text-emerald-950"
+                                : "border border-gray-200 hover:border-emerald-700/40 bg-white text-gray-600 hover:text-emerald-950 cursor-pointer"
                                 }`}
                         >
                             <GraduationCap
@@ -106,10 +123,11 @@ export function RegisterForm() {
 
                         <button
                             type="button"
+                            disabled={Boolean(isRoleCorrect)}
                             onClick={() => handleRoleSelect("tutor")}
-                            className={`relative flex flex-col items-center justify-center p-3.5 rounded-xl cursor-pointer text-center transition-all ${formData.role === "tutor"
+                            className={`relative flex flex-col items-center justify-center p-3.5 rounded-xl text-center transition-all disabled:cursor-not-allowed disabled:opacity-75 ${formData.role === "tutor"
                                 ? "border-2 border-emerald-900 bg-emerald-50/60 text-emerald-950 shadow-sm"
-                                : "border border-gray-200 hover:border-emerald-700/40 bg-white text-gray-600 hover:text-emerald-950"
+                                : "border border-gray-200 hover:border-emerald-700/40 bg-white text-gray-600 hover:text-emerald-950 cursor-pointer"
                                 }`}
                         >
                             <BookOpen
