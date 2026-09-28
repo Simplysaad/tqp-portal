@@ -1,6 +1,6 @@
 "use server";
 
-import Session, { IMemorizationRange } from "@/models/session.model";
+import Session, { IMemorizationRange, INuruAlBayanRange } from "@/models/session.model";
 import Schedule, { IScheduleDocument, DayOfWeek } from "@/models/schedule.model";
 import { revalidatePath } from "next/cache";
 import TutorGroup from "@/models/tutorGroup.model";
@@ -334,3 +334,208 @@ export async function fetchStudentAction(studentId: string) {
         return null
     }
 }
+
+
+export async function calculateBeginnerProgress(
+    startIndex: number,
+    currentIndex: number,
+    targetIndex: number
+) {
+    if (targetIndex <= startIndex) return 100;
+
+    const totalSteps = targetIndex - startIndex;
+    const completedSteps = currentIndex - startIndex;
+
+    const percentage = Math.round((completedSteps / totalSteps) * 100);
+
+    // Ensure percentage stays between 0 and 100
+    return Math.min(Math.max(percentage, 0), 100);
+}
+
+export async function logBeginnerStudentProgress(payload: {
+    sessionId: string;
+    studentId: string;
+    newPosition?: INuruAlBayanRange;
+    notes?: string;
+}) {
+    try {
+        await connectDB();
+        const { sessionId, studentId, newPosition, notes } = payload;
+
+        const session = await Session.findOne({ _id: sessionId, student: studentId });
+        if (!session) {
+            return { success: false, error: "Session record not found or unauthorized" };
+        }
+
+        let update: any = {}
+        if (newPosition) {
+            // Clean up missing numeric fields so they don't break min: 1 / min: 0 constraints
+            const formattedPosition: INuruAlBayanRange = {
+                start: newPosition.start ? {
+                    chapter: newPosition.start.chapter || "",
+                    section: newPosition.start.section || "",
+                    page: Number(newPosition.start.page) || 1,
+                    index: Number(newPosition.start.index) || 0,
+                } : undefined,
+                end: newPosition.end ? {
+                    chapter: newPosition.end.chapter || "",
+                    section: newPosition.end.section || "",
+                    page: Number(newPosition.end.page) || 1,
+                    index: Number(newPosition.end.index) || 0,
+                } : undefined,
+            };
+
+            update.newPosition = formattedPosition
+
+
+            // session.newPosition = formattedPosition;
+            // session.markModified("newPosition");
+        }
+
+        if (notes) {
+            update.tutorsComment = notes;
+        }
+
+
+
+
+        update = {
+            start: {
+                chapter: 'الحروف الهجائية (Arabic Alphabet - Names & Shapes)',
+                section: 'المقدمة (Introduction & Alphabet)',
+                page: 2,
+                index: 1
+            },
+            end: {
+                chapter: 'حركة الفتح (Fathah)',
+                section: 'الوحدة الأولى: الحركات Short Vowels (Harakat)',
+                page: 4,
+                index: 2
+            }
+        }
+
+
+        const updatedSession = await Session.findOneAndUpdate({ _id: session._id }, {
+            $set: update
+        }, { returnDocument: "after" })
+
+        console.log("update", update)
+        console.log("updatedSession", updatedSession)
+
+        // await session.save();
+
+        revalidatePath("/dashboard");
+        revalidatePath(`/dashboard/sessions/${sessionId}`);
+
+        return { success: true, message: "Beginner progress logged successfully" };
+    } catch (error: any) {
+        console.error("Error saving session progress:", error);
+        return { success: false, error: error.message || "Failed to log progress" };
+    }
+}
+
+async function updateBeginnerGoalAndProgress(
+    studentId: string,
+    newPosition?: INuruAlBayanRange
+) {
+    if (!newPosition?.end?.index) return;
+
+    const currentEnd = newPosition.end;
+    const currentIndex = currentEnd.index;
+
+    // 1. Update Active Nuru Al-Bayan Goal
+    const activeGoal = await Goal.findOne({
+        student: studentId,
+        type: "nuru_al_bayan",
+        status: "in_progress",
+    });
+
+    if (activeGoal) {
+        const startIndex = activeGoal.startPosition?.index || 1;
+        const targetIndex = activeGoal.targetPosition?.index || 1;
+
+        const progressPercentage = await calculateBeginnerProgress(
+            Number(startIndex),
+            Number(currentIndex),
+            Number(targetIndex)
+        );
+
+        activeGoal.progressPercentage = progressPercentage;
+        activeGoal.currentPosition = {
+            index: currentEnd.index,
+            chapter: currentEnd.chapter,
+            section: currentEnd.section,
+            page: currentEnd.page,
+        };
+
+        if (progressPercentage >= 100) {
+            activeGoal.status = "completed";
+        }
+
+        await activeGoal.save();
+    }
+
+    // 2. Sync Student Profile Position
+    await Student.findByIdAndUpdate(studentId, {
+        $set: {
+            "currentPosition.index": currentEnd.index,
+            "currentPosition.chapter": currentEnd.chapter,
+            "currentPosition.section": currentEnd.section,
+            "currentPosition.page": currentEnd.page,
+        },
+    });
+}
+
+export async function updateAndVerifyBeginnerSession(payload: {
+    sessionId: string;
+    tutorId: string;
+    newPosition?: INuruAlBayanRange;
+    performanceRating?: number;
+    tutorFeedback?: string;
+    status?: "completed" | "cancelled";
+}) {
+    try {
+        await connectDB();
+        const {
+            sessionId,
+            tutorId,
+            newPosition,
+            performanceRating,
+            tutorFeedback,
+            status,
+        } = payload;
+
+        const session = await Session.findOne({ _id: sessionId, tutor: tutorId });
+        if (!session) {
+            return { success: false, error: "Session not found or unauthorized tutor" };
+        }
+
+        // Update Session Fields
+        if (newPosition) session.newPosition = newPosition;
+        if (performanceRating) session.performance = performance;
+        if (tutorFeedback) session.tutorsComment = tutorFeedback;
+        if (status) session.performance = status;
+
+        await session.save();
+
+        // If newPosition was confirmed or edited, sync the student's goal & current profile position
+        if (newPosition) {
+            await updateBeginnerGoalAndProgress(session.student.toString(), newPosition);
+        }
+
+        revalidatePath("/dashboard");
+        revalidatePath(`/dashboard/sessions/${sessionId}`);
+
+        return {
+            success: true,
+            message: "Session progress updated and verified successfully",
+        };
+    } catch (error: any) {
+        return {
+            success: false,
+            error: error.message || "Failed to update session progress",
+        };
+    }
+}
+
+

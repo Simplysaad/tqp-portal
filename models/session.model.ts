@@ -1,27 +1,32 @@
 import mongoose, { Schema, Document, Model, model, Types } from "mongoose";
 import { IStudent } from "./student.model";
-import { IUser } from "./user.model";
 import { MemorizationPosition } from "@/lib/quran";
 
 export type AttendanceStatus = "present" | "absent" | "partial" | "cancelled";
 export type PerformanceRating = "excellent" | "good" | "fair" | "needs_work";
-
-// export interface MemorizationPosition{
-//     surah: string;
-//     aayah: number;
-//     page?: number;
-//     juz?: number;
-// }
 
 export interface IMemorizationRange {
     start?: MemorizationPosition;
     end?: MemorizationPosition;
 }
 
+// 1. Types for Nuru Al-Bayan / Beginner tracking
+export interface INuruAlBayanPosition {
+    chapter: string;
+    page: number;
+    index: number;
+    section: string;
+}
+
+export interface INuruAlBayanRange {
+    start?: INuruAlBayanPosition;
+    end?: INuruAlBayanPosition;
+}
+
 export interface ISession {
     name: string;
     schedule: Types.ObjectId;
-    student: Types.ObjectId | IStudent
+    student: Types.ObjectId | IStudent;
     tutor: Types.ObjectId;
     date: Date;
     startTime: number; // Minutes from midnight (0-1439)
@@ -35,7 +40,8 @@ export interface ISession {
     // Performance & Attendance Logged by Tutor After Class
     attendance: AttendanceStatus;
     approved: boolean;
-    newMemorization: IMemorizationRange;
+    newMemorization?: IMemorizationRange; // Optional for Quran students
+    newPosition?: INuruAlBayanRange;     // Optional for Beginner/Nuru Al-Bayan students
     revision?: IMemorizationRange;
     performance?: PerformanceRating;
     tutorsComment?: string;
@@ -46,6 +52,8 @@ export interface ISession {
 
 export interface ISessionDocument extends ISession, Document { }
 export interface ISessionModel extends Model<ISessionDocument> { }
+
+// --- Sub-Schemas ---
 
 const quranPositionSchema = new Schema<MemorizationPosition>(
     {
@@ -64,6 +72,27 @@ const memorizationRangeSchema = new Schema<IMemorizationRange>(
     },
     { _id: false }
 );
+
+const nuruAlBayanPositionSchema = new Schema<INuruAlBayanPosition>(
+    {
+        chapter: { type: String, trim: true, default: "" },
+        page: { type: Number, default: 1 },
+        index: { type: Number, default: 0 },
+        section: { type: String, trim: true, default: "" },
+    },
+    { _id: false }
+);
+
+
+const nuruAlBayanRangeSchema = new Schema<INuruAlBayanRange>(
+    {
+        start: nuruAlBayanPositionSchema,
+        end: nuruAlBayanPositionSchema,
+    },
+    { _id: false }
+);
+
+// --- Session Main Schema ---
 
 const sessionSchema = new Schema<ISessionDocument, ISessionModel>(
     {
@@ -100,7 +129,7 @@ const sessionSchema = new Schema<ISessionDocument, ISessionModel>(
         endTime: {
             type: Number,
             required: [true, "End time is required"],
-            min: [0, "End time cannot be less than 0"],
+            min: [0, "Start time cannot be less than 0"],
             max: [1439, "End time cannot exceed 1439"],
         },
 
@@ -124,10 +153,23 @@ const sessionSchema = new Schema<ISessionDocument, ISessionModel>(
                 message: "{VALUE} is not a valid attendance status",
             },
             required: [true, "Attendance status is required"],
-            default: "absent", // Default to absent until student clicks link
+            default: "absent",
         },
-        newMemorization: memorizationRangeSchema,
-        revision: memorizationRangeSchema,
+
+        // Progress Ranges
+        newMemorization: {
+            type: memorizationRangeSchema,
+            required: false,
+        },
+        newPosition: {
+            type: nuruAlBayanRangeSchema,
+            required: false,
+        },
+        revision: {
+            type: memorizationRangeSchema,
+            required: false,
+        },
+
         performance: {
             type: String,
             enum: {
@@ -137,7 +179,7 @@ const sessionSchema = new Schema<ISessionDocument, ISessionModel>(
         },
         approved: {
             type: Boolean,
-            default: false
+            default: false,
         },
         tutorsComment: {
             type: String,
@@ -150,11 +192,12 @@ const sessionSchema = new Schema<ISessionDocument, ISessionModel>(
     }
 );
 
-// Prevent duplicate sessions for the same student on the same schedule slot on the same day
+// Indexes
 sessionSchema.index({ schedule: 1, student: 1, date: 1 }, { unique: true });
 sessionSchema.index({ student: 1, date: -1 });
 sessionSchema.index({ tutor: 1, date: -1 });
 
+// Time Validation Pre-hook
 sessionSchema.pre("validate", function () {
     if (
         this.startTime !== undefined &&

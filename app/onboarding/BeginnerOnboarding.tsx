@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { getDepartments, getFaculties } from "@/lib/faculties";
 import SearchableSelect from "@/components/SearchableSelect";
 import { completeBeginnerOnboarding } from "@/actions/student.action";
+import { NURU_AL_BAYAN_ENTRIES } from "@/lib/nuralbayan"
 
 export interface NuruAlBayanPosition {
     index: number;
@@ -123,7 +124,12 @@ export default function BeginnerOnboardingForm({
                 expectedPosition: formData.expectedPosition,
             };
 
+            console.log("payload", payload)
+            // return;
+
             const res = await completeBeginnerOnboarding(payload);
+            console.log("res", res)
+
 
             if (!res.success) {
                 setError(res.message || "An error occurred during onboarding.");
@@ -238,7 +244,7 @@ export default function BeginnerOnboardingForm({
                         onChange={(val: string) =>
                             setFormData((prev) => ({ ...prev, level: val }))
                         }
-                        options={["100", "200", "300", "400", "500", "600", "700"]}
+                        options={["100", "200", "300", "400", "500", "600", "Graduated"]}
                     />
                 </div>
 
@@ -246,16 +252,17 @@ export default function BeginnerOnboardingForm({
                 <div className="p-4 border border-emerald-900/15 rounded-xl bg-emerald-50/50 space-y-3">
                     <div className="space-y-1">
                         <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
-                            Starting Progress
+                            Starting Point
                         </h3>
                         <p className="text-xs text-emerald-800/80">
-                            Select where you are currently starting in Nur Al-Bayan.
+                            This is where you'll be starting from
                         </p>
                     </div>
 
                     <div>
                         <SearchableSelect
                             options={chapterOptions}
+                            disabled
                             value={`${formData.currentPosition.index}. ${formData.currentPosition.chapter}`}
                             onChange={(val: string) =>
                                 handlePositionSelect("currentPosition", val)
@@ -279,16 +286,17 @@ export default function BeginnerOnboardingForm({
                 <div className="p-4 border border-emerald-900/15 rounded-xl bg-emerald-50/50 space-y-3">
                     <div className="space-y-1">
                         <h3 className="text-xs font-bold text-emerald-950 uppercase tracking-wider">
-                            Semester Target Goal
+                            Program Target
                         </h3>
                         <p className="text-xs text-emerald-800/80">
-                            Select your targeted completion milestone for this semester.
+                            Where you are expected to be by the end of the program.
                         </p>
                     </div>
 
                     <div>
                         <SearchableSelect
                             options={chapterOptions}
+                            disabled={true}
                             value={`${formData.expectedPosition.index}. ${formData.expectedPosition.chapter}`}
                             onChange={(val: string) =>
                                 handlePositionSelect("expectedPosition", val)
@@ -310,7 +318,7 @@ export default function BeginnerOnboardingForm({
 
                 <button
                     type="submit"
-                    disabled={loading}
+                    // disabled={loading}
                     className="w-full py-3 bg-emerald-900 text-white text-sm font-semibold rounded-xl hover:bg-emerald-950 transition disabled:opacity-50 cursor-pointer shadow-md shadow-emerald-950/10"
                 >
                     {loading ? "Saving Setup..." : "Complete Setup"}

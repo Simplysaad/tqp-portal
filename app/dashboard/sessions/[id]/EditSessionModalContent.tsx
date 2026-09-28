@@ -3,13 +3,13 @@
 import React, { useState, useMemo, useEffect } from "react";
 import SearchableSelect from "@/components/SearchableSelect";
 import { QURAN_SURAHS } from "@/lib/surah";
-import { IMemorizationRange } from "@/models/session.model";
+import { IMemorizationRange, INuruAlBayanRange } from "@/models/session.model";
 import { getMemorizationPosition } from "@/lib/quran";
 
 interface EditSessionModalContentProps {
   initialNewMem?: IMemorizationRange;
   initialRev?: IMemorizationRange;
-  onSave: (newMem: IMemorizationRange, rev: IMemorizationRange) => void;
+  onSave: (newMem: IMemorizationRange, rev: IMemorizationRange, pos: INuruAlBayanRange) => void;
   onClose: () => void;
 }
 
@@ -125,7 +125,7 @@ export default function EditSessionModalContent({
         updatedRev = { start, end };
       }
 
-      onSave(updatedNewMem, updatedRev);
+      // onSave(updatedNewMem, updatedRev);
     } catch (err: any) {
       setError(err.message || "Failed to calculate Quran positions. Please check your inputs.");
     } finally {
@@ -146,7 +146,7 @@ export default function EditSessionModalContent({
       )}
 
       {/* NEW MEMORIZATION SECTION */}
-      <div className="space-y-3 border-b pb-4">
+      <div className="space-y-3 pb-4">
         <h4 className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
           New Memorization (Sabqi)
         </h4>
@@ -221,12 +221,11 @@ export default function EditSessionModalContent({
       </div>
 
       {/* REVISION SECTION */}
-      <div className="space-y-3">
+      {/* <div className="space-y-3">
         <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
           Revision (Manzil)
         </h4>
 
-        {/* Rev Start Position */}
         <div className="grid grid-cols-3 gap-2">
           <div>
             <label className="block text-xs text-gray-600 mb-1">Start Surah</label>
@@ -260,7 +259,6 @@ export default function EditSessionModalContent({
           </div>
         </div>
 
-        {/* Rev End Position */}
         <div className="grid grid-cols-3 gap-2">
           <div>
             <label className="block text-xs text-gray-600 mb-1">End Surah</label>
@@ -293,10 +291,9 @@ export default function EditSessionModalContent({
             />
           </div>
         </div>
-      </div>
+      </div> */}
 
-      {/* ACTION BUTTONS */}
-      <div className="flex justify-end space-x-2 pt-4 border-t">
+      <div className="flex justify-end space-x-2 pt-4">
         <button
           type="button"
           onClick={onClose}

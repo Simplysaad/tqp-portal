@@ -60,6 +60,10 @@ const studentSchema = new Schema<IStudentDocument, IStudentModel>(
             type: String,
             trim: true,
         },
+        program: {
+            type: String,
+            default: "normal"
+        },
         level: {
             type: Number,
             min: [100, "Level cannot be below 100"],

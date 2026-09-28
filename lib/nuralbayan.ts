@@ -1,11 +1,11 @@
-interface INURU_AL_BAYAN_ENTRIES {
+export interface INURU_AL_BAYAN_ENTRIES {
     index: number;
     section: string;
     chapter: string;
     page: number
 }
 
-const NURU_AL_BAYAN_ENTRIES = [
+export const NURU_AL_BAYAN_ENTRIES = [
     {
         "index": 1,
         "section": "المقدمة (Introduction & Alphabet)",

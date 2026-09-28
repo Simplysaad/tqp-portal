@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model, model, Types } from "mongoose";
 import { MemorizationPosition } from "@/lib/quran";
+import { INuruAlBayanPosition } from "./session.model";
 
 export type GoalType = "memorization" | "revision" | "attendance" | "nuru_al_bayan";
 export type GoalStatus = "in_progress" | "completed" | "abandoned";
@@ -9,12 +10,20 @@ export interface IGoal {
     semester: string; // e.g., "Fall 2026" or "Semester 1"
     type: GoalType;
     title: string;
-    start: MemorizationPosition;
-    current: MemorizationPosition;
-    target: MemorizationPosition;
-    targetPages: number;
-    targetVerses: number;
-    targetChapters: number;
+
+    // Quranic Goal Tracking (Optional for Beginner Goals)
+    start?: MemorizationPosition;
+    current?: MemorizationPosition;
+    target?: MemorizationPosition;
+    targetPages?: number;
+    targetVerses?: number;
+    targetChapters?: number;
+
+    // Beginner / Nuru Al-Bayan Goal Tracking
+    startPosition?: INuruAlBayanPosition;
+    currentPosition?: INuruAlBayanPosition;
+    targetPosition?: INuruAlBayanPosition;
+
     startDate: Date;
     targetDate: Date;
     status: GoalStatus;
@@ -37,6 +46,17 @@ const memorizationPositionSchema = new Schema<MemorizationPosition>(
     { _id: false }
 );
 
+// Sub-schema for Nuru Al-Bayan position tracking
+const nuruAlBayanPositionSchema = new Schema<INuruAlBayanPosition>(
+    {
+        chapter: { type: String, trim: true },
+        page: { type: Number, min: 1 },
+        index: { type: Number, min: 0 },
+        section: { type: String, trim: true },
+    },
+    { _id: false }
+);
+
 const goalSchema = new Schema<IGoalDocument, IGoalModel>(
     {
         student: {
@@ -55,34 +75,52 @@ const goalSchema = new Schema<IGoalDocument, IGoalModel>(
             required: [true, "Goal title is required"],
             trim: true,
         },
+        type: {
+            type: String,
+            enum: ["memorization", "revision", "attendance", "nuru_al_bayan"],
+            default: "memorization",
+        },
+
+        // Quranic Fields (Optional to avoid schema errors on beginner goals)
         start: {
             type: memorizationPositionSchema,
-            required: true,
+            required: false,
         },
         current: {
             type: memorizationPositionSchema,
-            required: true,
+            required: false,
         },
         target: {
             type: memorizationPositionSchema,
-            required: true,
+            required: false,
         },
-
         targetPages: {
             type: Number,
-            default: 0
+            default: 0,
         },
         targetVerses: {
             type: Number,
-            default: 0
+            default: 0,
+        },
+        targetChapters: {
+            type: Number,
+            default: 0,
         },
 
-
-        type: {
-            type: String,
-            enum: ["memorization", "revision", "attendance"],
-            default: "memorization",
+        // Nuru Al-Bayan Position Fields
+        startPosition: {
+            type: nuruAlBayanPositionSchema,
+            required: false,
         },
+        currentPosition: {
+            type: nuruAlBayanPositionSchema,
+            required: false,
+        },
+        targetPosition: {
+            type: nuruAlBayanPositionSchema,
+            required: false,
+        },
+
         startDate: {
             type: Date,
             default: Date.now,
@@ -109,6 +147,7 @@ const goalSchema = new Schema<IGoalDocument, IGoalModel>(
 
 // Compound Index for student semester queries
 goalSchema.index({ student: 1, semester: 1 });
+goalSchema.index({ student: 1, type: 1, status: 1 });
 
 const Goal =
     (mongoose.models.Goal as IGoalModel) ||

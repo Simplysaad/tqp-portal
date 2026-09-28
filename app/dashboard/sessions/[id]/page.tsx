@@ -5,6 +5,7 @@ import Session from "@/models/session.model";
 import LogProgressForm from "./StudentLogForm";
 import TutorSessionVerificationForm from "./TutorSessionVerificationForm";
 import { generateOSFAMetadata } from "@/lib/metadata";
+import BeginnerLogProgressForm from "./BeginnerLogForm";
 
 interface SessionPageProps {
     params: Promise<{ id: string }>;
@@ -36,7 +37,7 @@ export default async function SessionDetailPage({ params }: SessionPageProps) {
     const sessionDoc = await Session.findById(sessionId)
         .populate({
             path: "student",
-            select: "_id user",
+            select: "_id user program",
             populate: { path: "user", select: "name _id" }
         })
         .populate({
@@ -60,6 +61,9 @@ export default async function SessionDetailPage({ params }: SessionPageProps) {
     // 3. Authorization Check (Permission Guard)
     const isAssignedStudent = userRole === "student" && session.student?.user?._id.toString() === userId;
     const isAssignedTutor = userRole === "tutor" && session.tutor?.user?._id.toString() === userId;
+    const isBeginner = session.student?.program //currentUser.program === "beginner";
+
+    console.log("session.student?.program", session.student)
 
     const studentName = session.student?.user?.name ?? "Student";
     const tutorName = session.tutor?.user?.name ?? "Tutor";
@@ -134,7 +138,7 @@ export default async function SessionDetailPage({ params }: SessionPageProps) {
             {isAssignedStudent && (
                 <>
                     {/* If the student hasn't logged memorization yet, show the submission form */}
-                    {!session.newMemorization?.start?.surah ? (
+                    {isBeginner ? (<BeginnerLogProgressForm sessionId={session._id} studentId={studentId} />) : !session.newMemorization?.start?.surah ? (
                         <LogProgressForm sessionId={session._id} studentId={studentId} />
                     ) : (
                         /* If already logged, show read-only status */

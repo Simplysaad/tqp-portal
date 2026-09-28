@@ -79,7 +79,7 @@ export default function StudentOnboardingForm({ userId }: { userId: string }) {
     const program = searchParams.get("program");
     const isBeginnerProgram = program === "beginner"
 
-    if (!isBeginnerProgram) return <BeginnerOnboardingForm userId={userId} />
+    if (isBeginnerProgram) return <BeginnerOnboardingForm userId={userId} />
 
     // Callbacks for updating automatic juz and page fields safely
     const handleCurrentUpdate = useCallback((juz: number, page: number) => {

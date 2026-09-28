@@ -12,6 +12,7 @@ interface SearchableSelectProps {
     value?: string;
     onChange?: (value: string) => void;
     placeholder?: string;
+    disabled?: boolean;
     name?: string; // For native form submissions
     required?: boolean;
     className?: string;
@@ -23,6 +24,7 @@ export default function SearchableSelect({
     onChange,
     placeholder = "Select an option...",
     name,
+    disabled = false,
     required = false,
     className = "",
 }: SearchableSelectProps) {
@@ -87,6 +89,7 @@ export default function SearchableSelect({
                 <input
                     type="hidden"
                     name={name}
+                    disabled={disabled}
                     value={selectedValue}
                     required={required}
                 />
@@ -95,6 +98,7 @@ export default function SearchableSelect({
             {/* Main Trigger Button */}
             <button
                 type="button"
+                disabled={disabled}
                 onClick={() => setIsOpen((prev) => !prev)}
                 className="w-full flex items-center justify-between border border-emerald-900/20 p-2.5 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-emerald-800 text-left"
             >
@@ -112,6 +116,7 @@ export default function SearchableSelect({
                         <input
                             type="text"
                             value={search}
+                            disabled={disabled}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search..."
                             autoFocus
