@@ -35,6 +35,7 @@ export function RegisterForm() {
         password: "",
         role: isRoleCorrect ? (role as "student" | "tutor") : "student",
         isActive: true,
+        program: isBeginnerProgram ? "beginner" : "normal",
         isOnboarded: false,
     });
 
@@ -107,7 +108,7 @@ export function RegisterForm() {
                     <div className="grid grid-cols-2 gap-3">
                         <button
                             type="button"
-                            disabled={Boolean(isRoleCorrect)}
+                            disabled={Boolean(isBeginnerProgram || isRoleCorrect)}
                             onClick={() => handleRoleSelect("student")}
                             className={`relative flex flex-col items-center justify-center p-3.5 rounded-xl text-center transition-all disabled:cursor-not-allowed disabled:opacity-75 ${formData.role === "student"
                                 ? "border-2 border-emerald-900 bg-emerald-50/60 text-emerald-950 shadow-sm"
@@ -123,7 +124,7 @@ export function RegisterForm() {
 
                         <button
                             type="button"
-                            disabled={Boolean(isRoleCorrect)}
+                            disabled={Boolean(isBeginnerProgram || isRoleCorrect)}
                             onClick={() => handleRoleSelect("tutor")}
                             className={`relative flex flex-col items-center justify-center p-3.5 rounded-xl text-center transition-all disabled:cursor-not-allowed disabled:opacity-75 ${formData.role === "tutor"
                                 ? "border-2 border-emerald-900 bg-emerald-50/60 text-emerald-950 shadow-sm"
@@ -252,7 +253,7 @@ export function RegisterForm() {
                     href={loginHref}
                     className="font-bold text-emerald-900 hover:text-emerald-950 hover:underline transition"
                 >
-                    Sign In Here
+                    Login
                 </Link>
             </div>
         </div>

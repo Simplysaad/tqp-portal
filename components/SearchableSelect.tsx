@@ -12,6 +12,7 @@ interface SearchableSelectProps {
     value?: string;
     onChange?: (value: string) => void;
     placeholder?: string;
+    displayOptions?: (string | SearchableOption)[];
     disabled?: boolean;
     name?: string; // For native form submissions
     required?: boolean;

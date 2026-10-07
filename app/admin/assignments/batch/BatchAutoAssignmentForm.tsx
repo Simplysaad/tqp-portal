@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { autoAssignStudentsToTutorGroups, getUnassignedStudentIds } from "@/actions/assignment.action";
 import { Zap, CheckCircle2, AlertCircle, RefreshCw } from "lucide-react";
+import AssignmentResultsReport from "./AssignmentsReport";
 
 export function BatchAutoAssignForm() {
     const [studentIdsInput, setStudentIdsInput] = useState("");
@@ -44,7 +45,7 @@ export function BatchAutoAssignForm() {
 
         try {
             const res = await autoAssignStudentsToTutorGroups(ids);
-            setResultSummary(res);
+            setResultSummary(res.summary);
 
             // Optionally clear or refresh state if auto-assign succeeded
             if (res.success) {
@@ -106,42 +107,7 @@ export function BatchAutoAssignForm() {
             </div>
 
             {/* Results Report Card */}
-            {resultSummary && (
-                <div className="mt-6 p-6 bg-zinc-50 rounded-xl border border-zinc-200 space-y-4">
-                    <h2 className="font-bold text-zinc-900 text-base">Execution Summary Report</h2>
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                        <div className="bg-white p-3 rounded-lg border border-zinc-200">
-                            <p className="text-xs text-zinc-400">Total Requested</p>
-                            <p className="text-xl font-bold text-zinc-900">{resultSummary.summary?.totalRequested}</p>
-                        </div>
-                        <div className="bg-white p-3 rounded-lg border border-zinc-200">
-                            <p className="text-xs text-zinc-400">Assigned</p>
-                            <p className="text-xl font-bold text-emerald-600">{resultSummary.summary?.assignedCount}</p>
-                        </div>
-                        <div className="bg-white p-3 rounded-lg border border-zinc-200">
-                            <p className="text-xs text-zinc-400">Unassigned</p>
-                            <p className="text-xl font-bold text-amber-600">{resultSummary.summary?.unassignedCount}</p>
-                        </div>
-                    </div>
-
-                    <div className="divide-y divide-zinc-200 max-h-60 overflow-y-auto">
-                        {resultSummary.summary?.results?.map((res: any, idx: number) => (
-                            <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
-                                <span className="font-mono">{res.studentName || res.studentId}</span>
-                                {res.assigned ? (
-                                    <span className="inline-flex items-center gap-1 text-emerald-700 font-semibold">
-                                        <CheckCircle2 className="w-3.5 h-3.5" /> Assigned
-                                    </span>
-                                ) : (
-                                    <span className="inline-flex items-center gap-1 text-amber-700 font-semibold">
-                                        <AlertCircle className="w-3.5 h-3.5" /> {res.reason}
-                                    </span>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+          {resultSummary && <AssignmentResultsReport resultSummary={resultSummary}  />}
         </div>
     );
 }

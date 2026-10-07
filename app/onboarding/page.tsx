@@ -35,6 +35,10 @@ const Onboarding = async () => {
 
     const isStudent = await Student.findOne({ user: userId });
     const isTutor = await Tutor.findOne({ user: userId });
+    const isBeginner = currentUser?.program === "beginner";
+
+
+    console.log("isbeginner:", isBeginner);
 
     const hasOnboarded = Boolean(isStudent || isTutor);
 

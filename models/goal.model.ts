@@ -7,7 +7,7 @@ export type GoalStatus = "in_progress" | "completed" | "abandoned";
 
 export interface IGoal {
     student: Types.ObjectId;
-    semester: string; // e.g., "Fall 2026" or "Semester 1"
+    semester: string;
     type: GoalType;
     title: string;
 

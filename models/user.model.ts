@@ -12,6 +12,7 @@ export interface IUser {
     role: UserRole;
     isOnboarded: boolean;
     isActive: boolean;
+    program: "beginner" | "normal" | string;
     lastLoginAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
@@ -66,6 +67,10 @@ const userSchema = new Schema<IUserDocument, IUserModel, IUserMethods>(
                 message: "{VALUE} is not a valid role",
             },
             default: "student",
+        },
+        program: {
+            type: String,
+            default: "normal"
         },
         isOnboarded: {
             type: Boolean,

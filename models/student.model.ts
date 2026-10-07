@@ -15,6 +15,7 @@ export interface IStudent {
     faculty?: string;
     department?: string;
     level?: number;
+    preferredTime?: "morning" | "afternoon" | "night";
     currentMemorization?: MemorizationPosition;
     currentPosition: NuruAlBayanPosition
     program: "beginner" | string
@@ -63,6 +64,11 @@ const studentSchema = new Schema<IStudentDocument, IStudentModel>(
         program: {
             type: String,
             default: "normal"
+        },
+        preferredTime: {
+            type: String,
+            enum: ["morning", "afternoon", "night"],
+            default: "night",
         },
         level: {
             type: Number,
