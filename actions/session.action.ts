@@ -1,6 +1,6 @@
 "use server";
 
-import Session, { IMemorizationRange, INuruAlBayanRange } from "@/models/session.model";
+import Session, { IMemorizationRange, INuruAlBayanRange, PerformanceRating } from "@/models/session.model";
 import Schedule, { IScheduleDocument, DayOfWeek } from "@/models/schedule.model";
 import { revalidatePath } from "next/cache";
 import TutorGroup from "@/models/tutorGroup.model";
@@ -224,9 +224,9 @@ async function updateStudentGoalAndProgress(
 
         activeGoal.current = {
             ...activeGoal.current,
-            surah: newMemorization.end.surah || activeGoal.current?.surah,
-            aayah: newMemorization.end.aayah || activeGoal.current?.aayah,
-            juz: newMemorization.end.juz || activeGoal.current?.juz,
+            surah: newMemorization.end.surah || activeGoal.current?.surah || "",
+            aayah: newMemorization.end.aayah || activeGoal.current?.aayah || 0,
+            juz: newMemorization.end.juz || activeGoal.current?.juz || 0,
             page: currentPage,
         };
 
@@ -490,7 +490,7 @@ export async function updateAndVerifyBeginnerSession(payload: {
     sessionId: string;
     tutorId: string;
     newPosition?: INuruAlBayanRange;
-    performanceRating?: number;
+    performanceRating?: PerformanceRating;
     tutorFeedback?: string;
     status?: "completed" | "cancelled";
 }) {
@@ -512,9 +512,9 @@ export async function updateAndVerifyBeginnerSession(payload: {
 
         // Update Session Fields
         if (newPosition) session.newPosition = newPosition;
-        if (performanceRating) session.performance = performance;
+        if (performanceRating) session.performance = performanceRating;
         if (tutorFeedback) session.tutorsComment = tutorFeedback;
-        if (status) session.performance = status;
+        // if (status) session.status = status;
 
         await session.save();
 

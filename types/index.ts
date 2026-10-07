@@ -1,6 +1,6 @@
 // @/types/index.ts
 import { MemorizationPosition } from "@/lib/quran";
-import { AttendanceStatus, PerformanceRating } from "@/models/session.model";
+import { AttendanceStatus, INuruAlBayanRange, PerformanceRating } from "@/models/session.model";
 import { Types } from "mongoose";
 
 export type Gender = "male" | "female";
@@ -77,6 +77,7 @@ export interface ITutorVerifyPayload {
     performance?: PerformanceRating;
     tutorsComment?: string;
     newMemorization: IMemorizationRange;
+    newPosition?: INuruAlBayanRange;
     revision?: IMemorizationRange;
 }
 

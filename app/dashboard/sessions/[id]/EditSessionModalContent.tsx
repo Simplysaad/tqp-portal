@@ -9,6 +9,8 @@ import { getMemorizationPosition } from "@/lib/quran";
 interface EditSessionModalContentProps {
   initialNewMem?: IMemorizationRange;
   initialRev?: IMemorizationRange;
+  isBeginner?: boolean;
+  initialNewPosition?: INuruAlBayanRange;
   onSave: (newMem: IMemorizationRange, rev: IMemorizationRange, pos: INuruAlBayanRange) => void;
   onClose: () => void;
 }
@@ -16,6 +18,8 @@ interface EditSessionModalContentProps {
 export default function EditSessionModalContent({
   initialNewMem,
   initialRev,
+  isBeginner,
+  initialNewPosition,
   onSave,
   onClose,
 }: EditSessionModalContentProps) {

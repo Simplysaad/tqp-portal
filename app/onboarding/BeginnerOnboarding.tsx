@@ -234,8 +234,13 @@ export default function BeginnerOnboardingForm({
 
                 {/* Level */}
                 <div>
-                    <label className="block text-xs font-semibold text-emerald-950 uppercase tracking-wider mb-1">
-                        Academic Level *
+                    <label className="block mb-1">
+                        <span className="block text-xs font-semibold text-emerald-950 uppercase tracking-wider">
+                            Academic Level *
+                        </span>
+                        <span className="block text-xs text-gray-600 font-normal normal-case mt-1">
+                           Your level next session
+                        </span>
                     </label>
                     <SearchableSelect
                         required

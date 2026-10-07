@@ -20,7 +20,7 @@ import { NuruAlBayanPosition } from "@/app/onboarding/BeginnerOnboarding";
 
 type QfEnv = "prelive" | "production";
 export interface MemorizationPosition {
-    surah: string;
+    surah: string ;
     aayah: number | string;
     juz?: number | string;
     page?: number | string;
