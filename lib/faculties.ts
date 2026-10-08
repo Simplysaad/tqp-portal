@@ -71,6 +71,7 @@ const faculties: IFaculty[] = [
             { "name": "Department of Architecture", "code": "ARC" },
             { "name": "Department of Building", "code": "BLD" },
             { "name": "Department of Estate Management", "code": "ESM" },
+            { "name": "Department of Surveying and Geo-Informatics", "code": "SVG" },
             { "name": "Department of Quantity Surveying", "code": "QTS" },
             { "name": "Department of Urban and Regional Planning", "code": "URP" },
             { "name": "Department of Fine and Applied Arts", "code": "FAA" }
