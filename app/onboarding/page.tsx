@@ -1,6 +1,7 @@
 import { getSession, logoutUser } from "@/actions/user.action";
 import StudentOnboardingForm from "./StudentOnboarding";
 import TutorOnboardingForm from "./TutorOnboarding";
+import BeginnerOnboardingForm from "./BeginnerOnboarding.tsx"
 import Student from "@/models/student.model";
 import Tutor from "@/models/tutor.model";
 import connectDB from "@/lib/db";
@@ -45,6 +46,10 @@ const Onboarding = async () => {
     if (hasOnboarded) {
         redirect("/dashboard");
     }
+
+if(isBeginner){
+return <BeginnerOnboardingForm userId={userId} />;
+}
 
     if (role === "student") {
         return <StudentOnboardingForm userId={userId} />;
