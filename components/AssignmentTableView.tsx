@@ -97,11 +97,11 @@ export default function AssignmentTableView() {
                             <span className="font-semibold text-zinc-800">{student.name}</span>
                             <span className="text-zinc-400 text-[10px] ml-2">({student.email})</span>
                           </div>
-                          <div className="flex gap-2 text-[11px] text-zinc-500">
-                            <span className="px-1.5 py-0.5 bg-zinc-100 rounded text-zinc-600">
+                          <div className="flex gap-2 text-[11px]  text-zinc-500">
+                            <span className="px-1.5 print:hidden py-0.5 bg-zinc-100 rounded text-zinc-600">
                               Juz {student.juz}
                             </span>
-                            <span className="capitalize">{student.gender}</span>
+                            <span className="capitalize print:hidden">{student.gender}</span>
                           </div>
                         </li>
                       ))}

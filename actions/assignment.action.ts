@@ -1,7 +1,7 @@
 "use server";
 
 import connectDB from "@/lib/db";
-import { IScheduleDocument } from "@/models/schedule.model";
+import Schedule, { IScheduleDocument } from "@/models/schedule.model";
 import Student, { IStudent, IStudentDocument } from "@/models/student.model";
 import TutorGroup from "@/models/tutorGroup.model";
 import { IUser } from "@/models/user.model";
@@ -61,9 +61,6 @@ export async function getUnassignedStudents(): Promise<IStudentDocument[]> {
   return unassignedStudents;
 }
 
-
-
-
 export async function assignStudentToTutor(
   studentId: string,
   tutorGroupId: string,
@@ -96,7 +93,7 @@ export async function assignStudentToTutor(
 
     // 2. Check if student is already in this specific target group
     const isAlreadyAssigned = tutorGroup.students.some(
-      (id: any) => id.toString() === studentId
+      (id: any) => id.toString() === studentId,
     );
     if (isAlreadyAssigned) {
       return {
@@ -153,19 +150,19 @@ export async function assignStudentToTutor(
     await TutorGroup.updateMany(
       { students: studentId },
       { $pull: { students: studentId } },
-      { session }
+      { session },
     );
 
     // Step B: Atomic assignment to target group with capacity re-verification
     const updatedGroup = await TutorGroup.findOneAndUpdate(
       {
         _id: tutorGroupId,
-        $expr: {$lt: [{ $size: "$students" }, maxCapacity] },
+        $expr: { $lt: [{ $size: "$students" }, maxCapacity] },
       },
       {
         $addToSet: { students: studentId },
       },
-      { new: true, session }
+      { new: true, session },
     );
 
     if (!updatedGroup) {
@@ -181,7 +178,7 @@ export async function assignStudentToTutor(
     await Student.updateOne(
       { _id: studentId },
       { $set: { tutor: updatedGroup.tutor } },
-      { session }
+      { session },
     );
 
     await session.commitTransaction();
@@ -500,7 +497,9 @@ export async function autoAssignStudentsToTutorGroups(
 
     for (const group of activeGroups) {
       const maxCapacity = group.rules?.maxCapacity ?? 5;
-      const currentStudents = (group.students || []).map((id: any) => id.toString());
+      const currentStudents = (group.students || []).map((id: any) =>
+        id.toString(),
+      );
 
       if (currentStudents.length < maxCapacity) {
         groupStateMap.set(group._id.toString(), {
@@ -518,7 +517,9 @@ export async function autoAssignStudentsToTutorGroups(
     let assignedCount = 0;
 
     // Helper: Convert startTime (minutes from midnight 0-1439) into time category
-    const getTimeCategory = (startTime: number): "morning" | "afternoon" | "night" => {
+    const getTimeCategory = (
+      startTime: number,
+    ): "morning" | "afternoon" | "night" => {
       if (startTime >= 0 && startTime < 720) return "morning"; // 00:00 - 11:59
       if (startTime >= 720 && startTime < 1020) return "afternoon"; // 12:00 - 16:59
       return "night"; // 17:00 - 23:59
@@ -527,7 +528,7 @@ export async function autoAssignStudentsToTutorGroups(
     // Helper: Calculate schedule match ratio and check if preferredTime matches majority of schedules
     const evaluateScheduleMatch = (
       preferredTime: "morning" | "afternoon" | "night" | undefined,
-      schedules: any[] = []
+      schedules: any[] = [],
     ) => {
       if (!preferredTime || schedules.length === 0) {
         return { isMajority: true, matchRatio: 1 };
@@ -569,7 +570,7 @@ export async function autoAssignStudentsToTutorGroups(
     // Helper: Check memorization range
     const matchesMemorizationRange = (
       studentJuz: number | undefined,
-      groupRange: any
+      groupRange: any,
     ) => {
       if (!groupRange?.start?.juz || !groupRange?.end?.juz || !studentJuz) {
         return true;
@@ -604,32 +605,35 @@ export async function autoAssignStudentsToTutorGroups(
       const rejectionReasons: string[] = [];
 
       for (const [groupId, groupState] of groupStateMap.entries()) {
-        const availableSlots = groupState.maxCapacity - groupState.studentsSet.size;
+        const availableSlots =
+          groupState.maxCapacity - groupState.studentsSet.size;
 
         if (availableSlots <= 0) {
           rejectionReasons.push(
-            `Group ${groupId}: Reached maximum capacity (${groupState.maxCapacity}).`
+            `Group ${groupId}: Reached maximum capacity (${groupState.maxCapacity}).`,
           );
           continue;
         }
 
         if (groupState.studentsSet.has(studentId)) {
           rejectionReasons.push(
-            `Group ${groupId}: Student is already enrolled.`
+            `Group ${groupId}: Student is already enrolled.`,
           );
           continue;
         }
 
         if (groupState.femaleOnly && !isFemale) {
           rejectionReasons.push(
-            `Group ${groupId}: Restricted to female students only.`
+            `Group ${groupId}: Restricted to female students only.`,
           );
           continue;
         }
 
-        if (!matchesMemorizationRange(studentJuz, groupState.memorizationRange)) {
+        if (
+          !matchesMemorizationRange(studentJuz, groupState.memorizationRange)
+        ) {
           rejectionReasons.push(
-            `Group ${groupId}: Student Juz level (${studentJuz || "N/A"}) outside required range.`
+            `Group ${groupId}: Student Juz level (${studentJuz || "N/A"}) outside required range.`,
           );
           continue;
         }
@@ -637,12 +641,12 @@ export async function autoAssignStudentsToTutorGroups(
         // Check majority schedule preference
         const { isMajority, matchRatio } = evaluateScheduleMatch(
           preferredTime,
-          groupState.schedules
+          groupState.schedules,
         );
 
         if (!isMajority) {
           rejectionReasons.push(
-            `Group ${groupId}: Schedules do not mostly match student's preferred time (${preferredTime}). Match ratio: ${Math.round(matchRatio * 100)}%.`
+            `Group ${groupId}: Schedules do not mostly match student's preferred time (${preferredTime}). Match ratio: ${Math.round(matchRatio * 100)}%.`,
           );
           continue;
         }
@@ -692,13 +696,14 @@ export async function autoAssignStudentsToTutorGroups(
         {
           _id: targetGroupId,
           students: { $ne: studentId },
-          $expr: {$lt: [{ $size: "$students" }, targetGroupState.maxCapacity],
+          $expr: {
+            $lt: [{ $size: "$students" }, targetGroupState.maxCapacity],
           },
         },
         {
           $addToSet: { students: studentId },
         },
-        { new: true }
+        { new: true },
       );
 
       if (updatedGroup) {
@@ -718,7 +723,7 @@ export async function autoAssignStudentsToTutorGroups(
 
         await Student.updateOne(
           { _id: studentId },
-          { $set: { tutor: updatedGroup.tutor } }
+          { $set: { tutor: updatedGroup.tutor } },
         );
       } else {
         results.push({
@@ -802,13 +807,17 @@ export async function getTutorGroupAssignmentsTable(): Promise<{
         path: "students",
         populate: { path: "user", select: "name email" },
       })
-      .populate("schedules")
+      .populate({
+        path: "schedules",
+        // model: Schedule,
+      })
       .sort({ createdAt: -1 })
       .lean();
 
     const formattedData: AssignmentTableRow[] = groups.map((group: any) => {
       // 1. Format Tutor Information
-      const tutorName = group.tutor?.user?.name || group.tutor?.name || "Unassigned";
+      const tutorName =
+        group.tutor?.user?.name || group.tutor?.name || "Unassigned";
       const tutorEmail = group.tutor?.user?.email || "N/A";
 
       // 2. Format Capacity
@@ -822,7 +831,10 @@ export async function getTutorGroupAssignmentsTable(): Promise<{
           ? group.schedules
               .map((s: any) => {
                 const day = s.dayOfWeek || s.day || "";
-                const time = s.startTime !== undefined ? formatTimeCategory(s.startTime) : "";
+                const time =
+                  s.startTime !== undefined
+                    ? formatTimeCategory(s.startTime)
+                    : "";
                 return `${day}${time ? ` (${time})` : ""}`;
               })
               .filter(Boolean)
@@ -835,7 +847,8 @@ export async function getTutorGroupAssignmentsTable(): Promise<{
         name: student.user?.name || "Unknown",
         email: student.user?.email || "N/A",
         gender: student.gender || "N/A",
-        juz: student.currentMemorization?.juz ?? "N/A",
+        juz: student.currentMemorization?.juz,
+        position: student.currentPosition?.chapter,
         preferredTime: student.preferredTime,
       }));
 

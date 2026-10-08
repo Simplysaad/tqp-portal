@@ -7,12 +7,13 @@
 
 @media print {
   @page {
-    size: A4 landscape;
+    /* size: A4 portrait; */
     margin: 8mm; /* Tight margins to give maximum printable area */
   }
 
   html, body {
     height: auto !important;
+    width: 100% !important;
     overflow: visible !important;
   }
 }
