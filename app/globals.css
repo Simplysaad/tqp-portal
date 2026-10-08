@@ -1,8 +1,21 @@
 @import "tailwindcss";
-@tailwind base;
-@tailwind components;
 @tailwind utilities;
 
 * {
     scroll-behavior: smooth;
+}
+
+@media print {
+  @page {
+    /* Sets paper size to A4 and orientation to Landscape */
+    size: A4 landscape;
+    
+    /* Optional: Control page margins */
+    margin: 10mm;
+  }
+
+  body {
+    /* Ensure content spans properly across the landscape width */
+    width: 100%;
+  }
 }

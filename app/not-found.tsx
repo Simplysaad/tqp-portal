@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Compass,
@@ -32,11 +32,18 @@ interface RouteItem {
 }
 
 export default function NotFound() {
+  
   const [activeRole, setActiveRole] = useState<Role>("student");
-
   const path = usePathname();
   const pathSegments = path.split("/").filter(Boolean);
   const isAdminPath = pathSegments[0] === "admin";
+
+  useEffect(() => {
+    if (isAdminPath) {
+      setActiveRole("admin");
+    }
+  }, [isAdminPath]);
+  
 
   // Sitemap categorized by user roles matching your app routes
   const roleRoutes: Record<
@@ -188,7 +195,7 @@ export default function NotFound() {
         {/* Role Selector Tabs */}
         <div className="flex justify-center">
           <div className="inline-flex p-1 bg-zinc-200/80 rounded-xl space-x-1 text-xs sm:text-sm font-medium">
-            {isAdminPath ? (
+            {!isAdminPath ? (
               <span className="inline-flex gap-1">
                 <button
                   onClick={() => setActiveRole("student")}
