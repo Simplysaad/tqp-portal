@@ -140,7 +140,7 @@ export default async function EnrollPage({ searchParams }: PageProps) {
                                     <div>
                                         <h2 className="font-bold text-lg text-gray-900">
                                             {tutor?.user?.name
-                                                ? `${tutor.gender === "female" ? "Ustadhah" : "Ustadh"} ${tutor.user.name.split(" ")[1] || tutor.user.name
+                                                ? `${tutor.gender === "female" ? "Ustadhah" : "Ustadh"} ${tutor.user.name
                                                 }`
                                                 : "Qur'an Tutor"}
                                         </h2>
