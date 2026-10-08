@@ -70,7 +70,7 @@ const userSchema = new Schema<IUserDocument, IUserModel, IUserMethods>(
         },
         program: {
             type: String,
-            default: "normal"
+            default: "beginner"
         },
         isOnboarded: {
             type: Boolean,
