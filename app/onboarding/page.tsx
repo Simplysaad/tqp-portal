@@ -1,7 +1,7 @@
 import { getSession, logoutUser } from "@/actions/user.action";
 import StudentOnboardingForm from "./StudentOnboarding";
 import TutorOnboardingForm from "./TutorOnboarding";
-import BeginnerOnboardingForm from "./BeginnerOnboarding.tsx"
+import BeginnerOnboardingForm from "./BeginnerOnboarding"
 import Student from "@/models/student.model";
 import Tutor from "@/models/tutor.model";
 import connectDB from "@/lib/db";
