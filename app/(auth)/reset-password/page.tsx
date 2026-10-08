@@ -3,7 +3,7 @@
 
 import { useState, useTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { resetPassword } from "@/app/actions/auth-reset";
+import { resetPassword } from "@/actions/auth-reset.action";
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
