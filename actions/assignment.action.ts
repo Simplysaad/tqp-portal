@@ -6,6 +6,7 @@ import Student, { IStudent, IStudentDocument } from "@/models/student.model";
 import TutorGroup from "@/models/tutorGroup.model";
 import { IUser } from "@/models/user.model";
 import { revalidatePath } from "next/cache";
+import mongoose from "mongoose";
 
 export interface ActionResult {
   success: boolean;
@@ -60,25 +61,19 @@ export async function getUnassignedStudents(): Promise<IStudentDocument[]> {
   return unassignedStudents;
 }
 
+
+
+
 export async function assignStudentToTutor(
   studentId: string,
   tutorGroupId: string,
 ): Promise<ActionResult> {
-  /**
-   * Get the tutorGroup
-   * Get the student
-   * Check if the tutorGroup.students.length < tutorGroup.rules.maxCapacity
-   * if tutorGroup.rules.femaleOnly; check if student.gender === female
-   * if tutorGroup.rules.memorizationRange; check if student.currentMemorization.start < tutorGroup.rules.memorizationRange.start &&
-   * student.currentMemorization.end > tutorGroup.rules.memorizationRange.end
-   *
-   * if all the rules pass, the student is assigned to the tutor, otherwise, return an error;
-   */
+  let session: mongoose.ClientSession | null = null;
 
   try {
     await connectDB();
 
-    // 1. Fetch both resources in parallel
+    // 1. Fetch both resources
     const [tutorGroup, student] = await Promise.all([
       TutorGroup.findById(tutorGroupId),
       Student.findById(studentId),
@@ -99,9 +94,9 @@ export async function assignStudentToTutor(
       return { success: false, message: "Student record not found." };
     }
 
-    // 2. Check if student is already in this group
+    // 2. Check if student is already in this specific target group
     const isAlreadyAssigned = tutorGroup.students.some(
-      (id) => id.toString() === studentId,
+      (id: any) => id.toString() === studentId
     );
     if (isAlreadyAssigned) {
       return {
@@ -111,6 +106,7 @@ export async function assignStudentToTutor(
     }
 
     // 3. Rule Check: Maximum Capacity
+    // Note: If the student is being moved from an existing group, capacity in the TARGET group must still be checked.
     const currentCount = tutorGroup.students.length;
     const maxCapacity = tutorGroup.rules?.maxCapacity ?? 5;
 
@@ -149,31 +145,46 @@ export async function assignStudentToTutor(
       }
     }
 
-    // 6. Atomic Assignment (Prevents concurrency race conditions)
+    // 6. Execute Reassignment in a Transaction
+    session = await mongoose.startSession();
+    session.startTransaction();
+
+    // Step A: Remove student from any previously assigned tutor groups
+    await TutorGroup.updateMany(
+      { students: studentId },
+      { $pull: { students: studentId } },
+      { session }
+    );
+
+    // Step B: Atomic assignment to target group with capacity re-verification
     const updatedGroup = await TutorGroup.findOneAndUpdate(
       {
         _id: tutorGroupId,
-        students: { $ne: studentId }, // Ensure student wasn't added concurrently
-        $expr: { $lt: [{ $size: "$students" }, maxCapacity] }, // Re-verify capacity atomically
+        $expr: {$lt: [{ $size: "$students" }, maxCapacity] },
       },
       {
         $addToSet: { students: studentId },
       },
-      { new: true },
+      { new: true, session }
     );
 
     if (!updatedGroup) {
+      await session.abortTransaction();
       return {
         success: false,
         message:
-          "Assignment failed due to a concurrent update or capacity cap reached.",
+          "Assignment failed due to a concurrent update or capacity limit reached.",
       };
     }
 
+    // Step C: Update student's assigned tutor reference
     await Student.updateOne(
       { _id: studentId },
       { $set: { tutor: updatedGroup.tutor } },
+      { session }
     );
+
+    await session.commitTransaction();
 
     // 7. Revalidate dashboard routes
     revalidatePath("/admin/dashboard");
@@ -181,15 +192,22 @@ export async function assignStudentToTutor(
 
     return {
       success: true,
-      message: "Student successfully assigned to tutor group.",
+      message: "Student successfully reassigned to tutor group.",
     };
   } catch (error: any) {
+    if (session && session.inTransaction()) {
+      await session.abortTransaction();
+    }
     console.error("Error in assignStudentToTutor:", error);
     return {
       success: false,
       message:
         error.message || "An unexpected error occurred during assignment.",
     };
+  } finally {
+    if (session) {
+      await session.endSession();
+    }
   }
 }
 
