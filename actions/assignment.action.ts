@@ -809,7 +809,7 @@ export async function getTutorGroupAssignmentsTable(): Promise<{
       })
       .populate({
         path: "schedules",
-        // model: Schedule,
+        model: Schedule,
       })
       .sort({ createdAt: -1 })
       .lean();

@@ -135,7 +135,7 @@ export default function BeginnerOnboardingForm({ userId }: { userId: string }) {
         setError(res.message || "An error occurred during onboarding.");
         setLoading(false);
       } else {
-        router.push("/dashboard");
+        router.push("/enroll");
       }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
