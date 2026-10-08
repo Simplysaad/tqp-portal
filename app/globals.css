@@ -5,24 +5,14 @@
     scroll-behavior: smooth;
 }
 
-/* Base Screen Styles */
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 8mm; /* Tight margins to give maximum printable area */
+  }
 
-    /* Print Styles for Single A4 Landscape Page */
-    @media print {
-      @page {
-        size: A4 landscape;
-        margin: 10mm; /* Controlled margin */
-      }
-
-      html, body {
-        width: 100%;
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        /* overflow: hidden; Clips any unexpected extra pixel overflow */
-      }
-    }
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
