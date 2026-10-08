@@ -25,7 +25,7 @@ export default function AssignmentResultsReport({ resultSummary }: { resultSumma
     };
 
     return (
-        <div className="mt-6 p-6 bg-zinc-50 rounded-xl border border-zinc-200 space-y-5 shadow-sm">
+        <div className="mt-6 md:p-6 px-2 py-4 bg-zinc-50 rounded-xl">
             {/* Header & Metrics Overview */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-zinc-200">
                 <div>
@@ -66,7 +66,7 @@ export default function AssignmentResultsReport({ resultSummary }: { resultSumma
             </div>
 
             {/* Stat Cards */}
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid md:grid-cols-3 py-4 grid-cols-2  gap-4 text-center">
                 <div className="bg-white p-3.5 rounded-lg border border-zinc-200 shadow-2xs">
                     <p className="text-xs font-medium text-zinc-500">Total Requested</p>
                     <p className="text-2xl font-bold text-zinc-900">{totalRequested}</p>

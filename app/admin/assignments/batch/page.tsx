@@ -10,7 +10,7 @@ export const metadata: Metadata = generateOSFAMetadata({
 
 export default function BatchAutoAssignPage() {
     return (
-        <div className="p-8 max-w-4xl mx-auto space-y-6">
+        <div className="md:p-8 md:max-w-4xl mx-auto space-y-6">
             <BatchAutoAssignForm />
         </div>
     );

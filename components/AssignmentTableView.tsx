@@ -22,15 +22,15 @@ export default function AssignmentTableView() {
   }, []);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="md:p-6 space-y-6">
         
       {/* Action Bar (Hidden when printing) */}
-      <div className="flex items-center justify-between print:hidden">
+      <div className="flex not-md:flex-wrap gap-4 items-center justify-between print:hidden">
         <div>
           <h1 className="text-xl font-bold text-zinc-900">Tutor Group Assignments</h1>
           <p className="text-xs text-zinc-500">Overview of all active tutor groups, assigned tutors, and students.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex  items-center gap-2">
           <button
             onClick={fetchData}
             disabled={loading}

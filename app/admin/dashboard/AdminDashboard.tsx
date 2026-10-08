@@ -39,7 +39,7 @@ export default async function AdminDashboardPage() {
     totalCapacity > 0 ? Math.round((totalOccupied / totalCapacity) * 100) : 0;
 
   return (
-    <div className="space-y-8 p-8 max-w-7xl mx-auto">
+    <div className="space-y-8 md:p-8 md:max-w-7xl mx-auto">
       <div className="flex print:hidden flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-zinc-200 pb-5">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900">

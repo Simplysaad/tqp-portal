@@ -62,7 +62,7 @@ export function BatchAutoAssignForm() {
     };
 
     return (
-        <div className="bg-white p-8 rounded-xl border border-zinc-200 shadow-sm space-y-6">
+        <div className="bg-white md:p-8 py-4 rounded-xl shadow-sm px-2 space-y-6">
             <div className="flex items-center gap-3 border-b border-zinc-100 pb-5">
                 <div className="p-3 bg-emerald-50 text-emerald-600 rounded-full">
                     <Zap className="w-6 h-6" />

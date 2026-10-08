@@ -97,7 +97,7 @@ export default function ReassignStudentForm() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
+    <div className="max-w-4xl mx-auto md:p-6 px-2 py-4 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-zinc-200">
         <div>

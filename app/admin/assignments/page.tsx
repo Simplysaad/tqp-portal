@@ -24,7 +24,7 @@ export default async function AssignmentsPage() {
   ]);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
+    <div className="md:p-8 md:max-w-7xl mx-auto space-y-6">
       <div className="flex print:hidden not-md:flex-col not-md:items-start gap-4 items-center justify-between border-b border-zinc-200 pb-5">
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">

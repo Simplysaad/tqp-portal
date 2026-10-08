@@ -137,11 +137,6 @@ const Navbar = () => {
                                         <span className="font-bold text-lg sm:text-xl tracking-tight text-emerald-950">
                                             TQP <span className="text-amber-600 font-serif font-normal text-base sm:text-lg">Portal</span>
                                         </span>
-                                        {isAdminRoute && (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                                Restricted
-                                            </span>
-                                        )}
                                     </div>
                                     <span className="text-[10px] tracking-widest uppercase font-medium text-emerald-800/70 -mt-1">
                                         {isAdminRoute ? "Admin Operations" : "Tajweed & Retention"}
