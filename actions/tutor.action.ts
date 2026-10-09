@@ -11,23 +11,6 @@ import { timeStringToMinutes } from "@/lib/time";
 import TutorGroup from "@/models/tutorGroup.model";
 
 
-
-import Goal from "@/models/goal.model";
-import User from "@/models/user.model";
-import { NuruAlBayanPosition } from "@/app/onboarding/BeginnerOnboarding";
-
-export interface CompleteBeginnerOnboardingInput {
-    userId: string;
-    gender: "male" | "female";
-    matricNumber?: string;
-    faculty?: string;
-    department?: string;
-    level?: number;
-    currentPosition?: NuruAlBayanPosition;
-    expectedPosition?: NuruAlBayanPosition;
-}
-
-
 export interface CompleteTutorOnboardingInput {
     userId: string;
     gender: "male" | "female";
@@ -272,46 +255,33 @@ const DAYS_ORDER: DayOfWeek[] = [
     "saturday",
 ];
 
+
+
 export async function getNearestSchedule(): Promise<
     { success: true; data: IScheduleDocument } | { success: false; error: string }
 > {
     const currentUser = await getSession();
-
     if (!currentUser) {
         return { success: false, error: "Unauthorized access" };
     }
-
     await connectDB();
 
     let schedules: IScheduleDocument[] = [];
-
     if (currentUser.role === "tutor") {
-        // 1. Fetch Tutor Profile
         const tutor = await Tutor.findOne({ user: currentUser.id }).lean();
         if (!tutor) {
             return { success: false, error: "Tutor profile not found" };
         }
-
-        // 2. Fetch all schedules for this tutor with populated tutor->user details
         schedules = await Schedule.find({ tutor: tutor._id })
-            .populate({
-                path: "tutor",
-                populate: { path: "user", select: "name email" },
-            })
+            .populate({ path: "tutor", populate: { path: "user", select: "name email" } })
             .lean<IScheduleDocument[]>();
     } else {
-        // 3. Fetch Student Profile first to get the Student _id
         const student = await Student.findOne({ user: currentUser.id || currentUser.userId }).lean();
         if (!student) {
             return { success: false, error: "Student profile not found" };
         }
-
-        // 4. Fetch schedules matching the Student _id
         schedules = await Schedule.find({ students: student._id })
-            .populate({
-                path: "tutor",
-                populate: { path: "user", select: "name email" },
-            })
+            .populate({ path: "tutor", populate: { path: "user", select: "name email" } })
             .lean<IScheduleDocument[]>();
     }
 
@@ -319,10 +289,14 @@ export async function getNearestSchedule(): Promise<
         return { success: false, error: "No class schedules found." };
     }
 
-    // 5. Determine current time context
+    // --- ONLY THIS PART CHANGED ---
     const now = new Date();
-    const currentDayIndex = now.getDay();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const nowInLagos = new Date(
+      now.toLocaleString("en-US", { timeZone: "Africa/Lagos" })
+    );
+    const currentDayIndex = nowInLagos.getDay();
+    const currentMinutes = nowInLagos.getHours() * 60 + nowInLagos.getMinutes();
+    // ------------------------------
 
     let nearestSchedule: IScheduleDocument | null = null;
     let smallestDiff = Infinity;
@@ -334,17 +308,14 @@ export async function getNearestSchedule(): Promise<
         if (scheduleDayIndex === -1) continue;
 
         let dayDiff = (scheduleDayIndex - currentDayIndex + 7) % 7;
-
-        // If today, but the schedule has already ended, push it to next week
         if (dayDiff === 0 && schedule.endTime < currentMinutes) {
             dayDiff = 7;
         }
 
         let timeDiffInMinutes: number;
         if (dayDiff === 0) {
-            // Class is either active or starting later today
             if (currentMinutes >= schedule.startTime && currentMinutes <= schedule.endTime) {
-                timeDiffInMinutes = 0; // Active right now -> Highest priority
+                timeDiffInMinutes = 0;
             } else {
                 timeDiffInMinutes = schedule.startTime - currentMinutes;
             }
@@ -364,6 +335,10 @@ export async function getNearestSchedule(): Promise<
 
     return { success: true, data: JSON.parse(JSON.stringify(nearestSchedule)) };
 }
+
+
+
+
 
 export async function activateNearestSchedule() {
     const result = await getNearestSchedule();
