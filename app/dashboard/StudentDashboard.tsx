@@ -3,20 +3,12 @@ import Student from "@/models/student.model";
 import Session from "@/models/session.model";
 import Goal from "@/models/goal.model";
 import TutorGroup from "@/models/tutorGroup.model";
-import Schedule from "@/models/schedule.model";
-import JoinClassButton from "@/components/JoinClassButton";
+import StudentJoinBanner from "@/components/StudentJoinBanner";
 import Link from "next/link";
-import { getNearestSchedule } from "@/actions/tutor.action";
 import { getSession } from "@/actions/user.action";
 
 interface StudentDashboardProps {
   userId: string;
-}
-
-function minutesToTime(minutes: number): string {
-  const hours = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
 }
 
 export default async function StudentDashboard({
@@ -44,7 +36,6 @@ export default async function StudentDashboard({
           Please complete your student onboarding process to access your
           dashboard.
         </p>
-        <a href="/onboarding">Complete Onboarding</a>
       </div>
     );
   }
@@ -64,21 +55,7 @@ export default async function StudentDashboard({
     .populate("schedules")
     .lean();
 
-  // 3. Fetch nearest schedule status (Synchronized with Tutor Dashboard logic)
-  let nearestSchedule: any = null;
-  let isLinkActive = false;
-  let hasMeetLink = false;
-
-  const scheduleResponse = await getNearestSchedule();
-  if (scheduleResponse.success && scheduleResponse.data) {
-    nearestSchedule = scheduleResponse.data;
-    isLinkActive = (nearestSchedule as any).status === "active";
-    hasMeetLink = Boolean(
-      nearestSchedule.googleMeetLink || nearestSchedule.pseudoLink
-    );
-  }
-
-  // 4. Fetch Student's Active Academic Goal
+  // 3. Fetch Student's Active Academic Goal
   const activeGoal = await Goal.findOne({
     student: student._id,
     status: "in_progress",
@@ -86,7 +63,7 @@ export default async function StudentDashboard({
     .sort({ createdAt: -1 })
     .lean();
 
-  // 5. Fetch Recent Sessions (Last 5 for History Feed)
+  // 4. Fetch Recent Sessions
   const recentSessions = await Session.find({ student: student._id })
     .sort({ date: -1 })
     .limit(5)
@@ -97,7 +74,7 @@ export default async function StudentDashboard({
     (sess) => sess.tutorsComment || sess.performance
   );
 
-  // 6. Attendance Stats
+  // 5. Attendance Stats
   const totalSessionsCount = await Session.countDocuments({
     student: student._id,
   });
@@ -164,62 +141,8 @@ export default async function StudentDashboard({
         </div>
       </div>
 
-      {/* Live Class Joining Banner */}
-      <div
-        className={`p-5 border rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition ${
-          isLinkActive
-            ? "bg-emerald-50 border-emerald-300 shadow-sm"
-            : "bg-gray-50 border-gray-200"
-        }`}
-      >
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-bold text-gray-900 text-base">
-              {tutorGroup
-                ? `Tutor: ${
-                    (tutorGroup.tutor as any)?.gender === "male"
-                      ? "Ustadh"
-                      : "Ustadhah"
-                  } ${(tutorGroup.tutor as any)?.user?.name || "Assigned Ustadh"}`
-                : "You have not been assigned to a tutor yet."}
-            </h3>
-            {isLinkActive && (
-              <span className="text-xs bg-emerald-600 text-white font-semibold px-2 py-0.5 rounded-full animate-pulse">
-                Class Live
-              </span>
-            )}
-          </div>
-          {tutorGroup && (
-            <p className="text-sm text-gray-600">
-              {nearestSchedule
-                ? `Weekly Slot: ${nearestSchedule.dayOfWeek}s (${minutesToTime(
-                    nearestSchedule.startTime
-                  )} - ${minutesToTime(nearestSchedule.endTime)})`
-                : "No upcoming schedule found."}
-            </p>
-          )}
-        </div>
-
-        {tutorGroup ? (
-          <div className="flex items-center gap-3">
-            {(tutorGroup?.tutor as any)?.user?.whatsappNumber && (
-              <a
-                href={`https://wa.me/${(tutorGroup?.tutor as any).user.whatsappNumber}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-2 text-xs font-semibold border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 rounded-md transition"
-              >
-                Contact Ustadh
-              </a>
-            )}
-            <JoinClassButton
-              link={`/join/${tutorGroup?._id}`}
-              isLinkActive={isLinkActive}
-              meetLinkAvailable={hasMeetLink}
-            />
-          </div>
-        ) : null}
-      </div>
+      {/* Live Class Joining Banner (Delegated to Client Component) */}
+      <StudentJoinBanner tutorGroup={tutorGroup} />
 
       {/* Current Position & Progress Cards */}
       {student.currentPosition ? (
@@ -341,7 +264,6 @@ export default async function StudentDashboard({
             </span>
           </div>
 
-          {/* Progress Bar */}
           <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
             <div
               className="bg-emerald-600 h-2.5 rounded-full transition-all duration-500"
