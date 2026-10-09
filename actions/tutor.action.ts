@@ -289,13 +289,33 @@ export async function getNearestSchedule(): Promise<
         return { success: false, error: "No class schedules found." };
     }
 
+    // --- CLEAN TIMEZONE PARSING (Africa/Lagos / UTC+1) ---
+    // Extract current day and time explicitly in target timezone (WAT / UTC+1)
+    const now = new Date();
+    
+    // Format options in the target timezone
+    const timeFormatter = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Africa/Lagos",
+        hour12: false,
+        weekday: "short",
+        hour: "numeric",
+        minute: "numeric",
+    });
 
-    // --- BYPASS: just add 1 hour to UTC ---
-const nowUtcPlusOne = new Date(Date.now() + 60 * 60 * 1000); // +1 hour in ms
+    const parts = timeFormatter.formatToParts(now);
+    const getPart = (type: string) => parts.find((p) => p.type === type)?.value || "";
 
-const currentDayIndex: number = nowUtcPlusOne.getUTCDay();
-const currentMinutes: number = nowUtcPlusOne.getUTCHours() * 60 + nowUtcPlusOne.getUTCMinutes();
-// --------------------------------------
+    // Map day name to day index (0 = Sun, 1 = Mon, ..., 6 = Sat)
+    const dayMap: Record<string, number> = {
+        Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6
+    };
+
+    const currentDayIndex: number = dayMap[getPart("weekday")];
+    const currentHours: number = parseInt(getPart("hour"), 10) % 24; // Handles 24:00 edge case
+    const currentMins: number = parseInt(getPart("minute"), 10);
+
+    const currentMinutes: number = currentHours * 60 + currentMins;
+    // ----------------------------------------------------
 
     let nearestSchedule: IScheduleDocument | null = null;
     let smallestDiff = Infinity;
@@ -334,7 +354,6 @@ const currentMinutes: number = nowUtcPlusOne.getUTCHours() * 60 + nowUtcPlusOne.
 
     return { success: true, data: JSON.parse(JSON.stringify(nearestSchedule)) };
 }
-
 
 
 
