@@ -7,7 +7,6 @@ import Schedule from "@/models/schedule.model";
 import JoinClassButton from "@/components/JoinClassButton";
 import Link from "next/link";
 import { getNearestSchedule } from "@/actions/tutor.action";
-import { isScheduleOpen } from "@/actions/session.action";
 import { getSession } from "@/actions/user.action";
 
 interface StudentDashboardProps {
@@ -25,9 +24,7 @@ export default async function StudentDashboard({
 }: StudentDashboardProps) {
   await connectDB();
 
-
-
-const currentUser = await getSession();
+  const currentUser = await getSession();
 
   // 1. Fetch student profile with user detail
   const student = await Student.findOne({ user: userId })
@@ -47,10 +44,12 @@ const currentUser = await getSession();
           Please complete your student onboarding process to access your
           dashboard.
         </p>
+        <a href="/onboarding">Complete Onboarding</a>
       </div>
     );
   }
 
+  // 2. Fetch assigned tutor group
   const tutorGroup = await TutorGroup.findOne({
     students: student._id,
     isActive: true,
@@ -59,35 +58,27 @@ const currentUser = await getSession();
       path: "tutor",
       populate: {
         path: "user",
-        select: "name whatsappNumber",
+        select: "name whatsappNumber gender",
       },
     })
     .populate("schedules")
     .lean();
 
-  let openSchedule: any = null;
+  // 3. Fetch nearest schedule status (Synchronized with Tutor Dashboard logic)
+  let nearestSchedule: any = null;
   let isLinkActive = false;
   let hasMeetLink = false;
 
-  if (tutorGroup?.schedules?.length) {
-    for (const schedule of tutorGroup.schedules as any[]) {
-      const isOpen = await isScheduleOpen(schedule);
-      if (isOpen) {
-        openSchedule = schedule;
-        isLinkActive = true;
-        hasMeetLink = Boolean(schedule.googleMeetLink || schedule.pseudoLink);
-        break;
-      }
-    }
-  }
-
-  let nearestSchedule: any = null;
   const scheduleResponse = await getNearestSchedule();
-  if (scheduleResponse.success) {
+  if (scheduleResponse.success && scheduleResponse.data) {
     nearestSchedule = scheduleResponse.data;
+    isLinkActive = (nearestSchedule as any).status === "active";
+    hasMeetLink = Boolean(
+      nearestSchedule.googleMeetLink || nearestSchedule.pseudoLink
+    );
   }
 
-  // 3. Fetch Student's Active Academic Goal
+  // 4. Fetch Student's Active Academic Goal
   const activeGoal = await Goal.findOne({
     student: student._id,
     status: "in_progress",
@@ -95,7 +86,7 @@ const currentUser = await getSession();
     .sort({ createdAt: -1 })
     .lean();
 
-  // 4. Fetch Recent Sessions (Last 5 for History Feed)
+  // 5. Fetch Recent Sessions (Last 5 for History Feed)
   const recentSessions = await Session.find({ student: student._id })
     .sort({ date: -1 })
     .limit(5)
@@ -103,10 +94,10 @@ const currentUser = await getSession();
     .lean();
 
   const latestEvaluatedSession = recentSessions.find(
-    (sess) => sess.tutorsComment || sess.performance,
+    (sess) => sess.tutorsComment || sess.performance
   );
 
-  // 5. Attendance Stats & Streaks Calculation
+  // 6. Attendance Stats
   const totalSessionsCount = await Session.countDocuments({
     student: student._id,
   });
@@ -202,7 +193,7 @@ const currentUser = await getSession();
             <p className="text-sm text-gray-600">
               {nearestSchedule
                 ? `Weekly Slot: ${nearestSchedule.dayOfWeek}s (${minutesToTime(
-                    nearestSchedule.startTime,
+                    nearestSchedule.startTime
                   )} - ${minutesToTime(nearestSchedule.endTime)})`
                 : "No upcoming schedule found."}
             </p>
@@ -223,23 +214,14 @@ const currentUser = await getSession();
             )}
             <JoinClassButton
               link={`/join/${tutorGroup?._id}`}
-              // isLinkActive={Boolean(openSchedule?.isOpen)}
               isLinkActive={isLinkActive}
               meetLinkAvailable={hasMeetLink}
             />
           </div>
-        ) : null
-        // <Link
-        //     className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-sm font-semibold shadow-sm transition flex items-center gap-2"
-        //     href={"/enroll?from=student_dashboard&next=/dashboard"}
-        //   >
-        //     Enroll Now
-        //   </Link>
-        }
+        ) : null}
       </div>
 
       {/* Current Position & Progress Cards */}
-
       {student.currentPosition ? (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 border rounded-xl bg-white shadow-sm space-y-1">
@@ -379,15 +361,14 @@ const currentUser = await getSession();
               </span>
             ) : (
               <span>
-                {/* Target Pages: <strong>{activeGoal.targetPages} Pages</strong>
-                              <br /> */}
                 Target Pages:{" "}
                 <strong>
                   {Number(activeGoal.target?.page) -
                     Number(activeGoal.current?.page)}{" "}
                   Pages Remaining
                 </strong>
-              </span>)}
+              </span>
+            )}
           </div>
         </div>
       )}
