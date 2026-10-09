@@ -289,14 +289,13 @@ export async function getNearestSchedule(): Promise<
         return { success: false, error: "No class schedules found." };
     }
 
-    // --- ONLY THIS PART CHANGED ---
-    const now = new Date();
-    const nowInLagos = new Date(
-      now.toLocaleString("en-US", { timeZone: "Africa/Lagos" })
-    );
-    const currentDayIndex = nowInLagos.getDay();
-    const currentMinutes = nowInLagos.getHours() * 60 + nowInLagos.getMinutes();
-    // ------------------------------
+
+    // --- BYPASS: just add 1 hour to UTC ---
+const nowUtcPlusOne = new Date(Date.now() + 60 * 60 * 1000); // +1 hour in ms
+
+const currentDayIndex: number = nowUtcPlusOne.getUTCDay();
+const currentMinutes: number = nowUtcPlusOne.getUTCHours() * 60 + nowUtcPlusOne.getUTCMinutes();
+// --------------------------------------
 
     let nearestSchedule: IScheduleDocument | null = null;
     let smallestDiff = Infinity;
