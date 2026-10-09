@@ -291,9 +291,13 @@ export async function getNearestSchedule(): Promise<
 
     // --- ONLY THIS PART CHANGED ---
     const now = new Date();
-    const nowInLagos = new Date(
-      now.toLocaleString("en-US", { timeZone: "Africa/Lagos" })
-    );
+    // const nowInLagos = new Date(
+     // now.toLocaleString("en-US", // { timeZone: "Africa/Lagos" }) + 60 * 60 * 1000
+  //  );
+
+const nowInLagos = new Date(
+      now + 60 * 60 * 1000)
+
     const currentDayIndex = nowInLagos.getDay();
     const currentMinutes = nowInLagos.getHours() * 60 + nowInLagos.getMinutes();
     // ------------------------------
