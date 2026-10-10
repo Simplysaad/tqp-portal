@@ -28,11 +28,11 @@ export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps
     const fetchStatus = async () => {
       try {
         const res = await getNearestSchedule();
-        const isOpen = await isScheduleOpen(res?.data)
         
         if (isSubscribed && res?.success && res.data) {
           setNearestSchedule(res.data);
           
+          const isOpen = await isScheduleOpen(res.data)
           setIsLinkActive((res.data as any).status === "active" || isOpen);
           setHasMeetLink(Boolean(res.data.googleMeetLink || res.data.pseudoLink));
         }
