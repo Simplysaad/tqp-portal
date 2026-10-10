@@ -28,14 +28,21 @@ export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps
     const fetchStatus = async () => {
       try {
         const res = await getNearestSchedule();
+        console.log("nearestSchedule", res)
         
         if (isSubscribed && res?.success && res.data) {
           setNearestSchedule(res.data);
           
           const isOpen = await isScheduleOpen(res.data)
+          console.log("isOpen", isOpen)
+          
           setIsLinkActive((res.data as any).status === "active" || isOpen);
           setHasMeetLink(Boolean(res.data.googleMeetLink || res.data.pseudoLink));
         }
+
+        console.log("isLinkActive", isLinkActive);
+
+        
       } catch (error) {
         console.error("Failed to fetch schedule status:", error);
       } finally {
