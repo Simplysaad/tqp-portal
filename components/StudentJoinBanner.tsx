@@ -17,45 +17,67 @@ function minutesToTime(minutes: number): string {
 }
 
 export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps) {
-  const [isLinkActive, setIsLinkActive] = useState<boolean>(false);
-  const [hasMeetLink, setHasMeetLink] = useState<boolean>(false);
-  const [nearestSchedule, setNearestSchedule] = useState<any>(null);
+  // const [isLinkActive, setIsLinkActive] = useState<boolean>(false);
+  // const [hasMeetLink, setHasMeetLink] = useState<boolean>(false);
+  // const [nearestSchedule, setNearestSchedule] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  useEffect(() => {
-    let isSubscribed = true;
+  // useEffect(() => {
+  //   let isSubscribed = true;
 
-    const fetchStatus = async () => {
-      try {
-        const res = await getNearestSchedule();
-        console.log("nearestSchedule", res)
+  //   const fetchStatus = async () => {
+  //     try {
+  //       const res = await getNearestSchedule();
+  //       console.log("nearestSchedule", res)
         
-        if (isSubscribed && res?.success && res.data) {
-          setNearestSchedule(res.data);
+  //       if (isSubscribed && res?.success && res.data) {
+  //         setNearestSchedule(res.data);
           
-          const isOpen = await isScheduleOpen(res.data)
-          console.log("isOpen", isOpen)
+  //         const isOpen = await isScheduleOpen(res.data)
+  //         console.log("isOpen", isOpen)
           
-          setIsLinkActive((res.data as any).status === "active" || isOpen);
-          setHasMeetLink(Boolean(res.data.googleMeetLink || res.data.pseudoLink));
+  //         setIsLinkActive((res.data as any).status === "active" || isOpen);
+  //         setHasMeetLink(Boolean(res.data.googleMeetLink || res.data.pseudoLink));
+  //       }
+
+  //       console.log("isLinkActive", isLinkActive);
+
+        
+  //     } catch (error) {
+  //       console.error("Failed to fetch schedule status:", error);
+  //     } finally {
+  //       if (isSubscribed) setIsLoading(false);
+  //     }
+  //   };
+
+  //   fetchStatus();
+
+  //   return () => {
+  //     isSubscribed = false;
+  //   };
+  // }, []);
+
+      let openSchedule: any = null;
+    let isLinkActive = false;
+    let hasMeetLink = false;
+
+    if (tutorGroup?.schedules?.length) {
+        for (const schedule of tutorGroup.schedules as any[]) {
+            const isOpen = await isScheduleOpen(schedule);
+            if (isOpen) {
+                openSchedule = schedule;
+                isLinkActive = true;
+                hasMeetLink = Boolean(schedule.googleMeetLink || schedule.pseudoLink);
+                break;
+            }
         }
+    }
 
-        console.log("isLinkActive", isLinkActive);
-
-        
-      } catch (error) {
-        console.error("Failed to fetch schedule status:", error);
-      } finally {
-        if (isSubscribed) setIsLoading(false);
-      }
-    };
-
-    fetchStatus();
-
-    return () => {
-      isSubscribed = false;
-    };
-  }, []);
+    let nearestSchedule: any = null;
+    const scheduleResponse = await getNearestSchedule();
+    if (scheduleResponse.success) {
+        nearestSchedule = scheduleResponse.data;
+    }
 
   if (isLoading) {
     return (
