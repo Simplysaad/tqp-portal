@@ -3,10 +3,15 @@
 import { useState, useEffect } from "react";
 import { getNearestSchedule } from "@/actions/tutor.action";
 import JoinClassButton from "@/components/JoinClassButton";
-import { minutesToTime } from "@/models/tutor.model";
 
 interface StudentJoinBannerProps {
   tutorGroup: any;
+}
+
+function minutesToTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
 }
 
 export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps) {
