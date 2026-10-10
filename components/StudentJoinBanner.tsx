@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { getNearestSchedule } from "@/actions/tutor.action";
 import JoinClassButton from "@/components/JoinClassButton";
+import {isScheduleOpen} from "@/actions/session.action"
+
 
 interface StudentJoinBannerProps {
   tutorGroup: any;
@@ -26,9 +28,12 @@ export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps
     const fetchStatus = async () => {
       try {
         const res = await getNearestSchedule();
+        const isOpen = await isScheduleOpen(res?.data)
+        
         if (isSubscribed && res?.success && res.data) {
           setNearestSchedule(res.data);
-          setIsLinkActive((res.data as any).status === "active");
+          
+          setIsLinkActive((res.data as any).status === "active" || isOpen);
           setHasMeetLink(Boolean(res.data.googleMeetLink || res.data.pseudoLink));
         }
       } catch (error) {
