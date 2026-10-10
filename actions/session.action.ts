@@ -49,7 +49,8 @@ export async function isScheduleOpen(schedule: IScheduleDocument | string): Prom
 
     // 1. Check if schedule matches current day and time bounds
     const isDayMatching = doc.dayOfWeek?.toLowerCase() === currentDay;
-    const isTimeInRange = currentMinutes >= doc.startTime && currentMinutes <= doc.endTime;
+    // const isTimeInRange = currentMinutes >= doc.startTime && currentMinutes <= doc.endTime;
+    const isTimeInRange = (currentMinutes + 60) >= doc.startTime && (currentMinutes+60) <= doc.endTime;
     const isCurrentlyInWindow = isDayMatching && isTimeInRange;
 
     // 2. Schedule must be in 'active' status to be considered open
@@ -58,6 +59,7 @@ export async function isScheduleOpen(schedule: IScheduleDocument | string): Prom
     // 3. Auto-sync database if actual calculated state differs from `doc.isOpen`
     if (doc.isOpen !== shouldBeOpen) {
         doc.isOpen = shouldBeOpen;
+      doc.status = shouldBeOpen? "active" : "inactive"
 
         // Save or update atomically
         if (typeof doc.save === "function") {
