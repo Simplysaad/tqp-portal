@@ -32,38 +32,37 @@ const DAYS_OF_WEEK: DayOfWeek[] = [
  * @returns Promise<boolean> - True if the class is currently open and active
  */
 
-export async function isScheduleOpen(schedule: IScheduleDocument | string): Promise<boolean> {
+ export async function isScheduleOpen(schedule: IScheduleDocument | string): Promise<boolean> {
     let doc: IScheduleDocument | null = null;
 
     if (typeof schedule === "string") {
         doc = await Schedule.findById(schedule);
     } else {
-        doc = schedule;
+        doc = schedule as IScheduleDocument;
     }
 
     if (!doc) return false;
 
+    // --- FIX: Force to Africa/Lagos time ---
     const now = new Date();
-    const currentDay = DAYS_OF_WEEK[now.getDay()];
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const nowInLagos = new Date(
+        now.toLocaleString("en-US", { timeZone: "Africa/Lagos" })
+    );
+    const currentDay = DAYS_OF_WEEK[nowInLagos.getDay()]; // Sunday = 0
+    const currentMinutes = nowInLagos.getHours() * 60 + nowInLagos.getMinutes();
+    // ---------------------------------------
 
-    // 1. Check if schedule matches current day and time bounds
-    const isDayMatching = doc.dayOfWeek?.toLowerCase() === currentDay;
-    // const isTimeInRange = currentMinutes >= doc.startTime && currentMinutes <= doc.endTime;
-    const isTimeInRange = (currentMinutes + 60) >= doc.startTime && (currentMinutes+60) <= doc.endTime;
+    const isDayMatching = doc.dayOfWeek?.toLowerCase() === currentDay.toLowerCase();
+    const isTimeInRange = currentMinutes >= doc.startTime && currentMinutes <= doc.endTime;
     const isCurrentlyInWindow = isDayMatching && isTimeInRange;
 
-    // 2. Schedule must be in 'active' status to be considered open
     const shouldBeOpen = doc.status === "active" && isCurrentlyInWindow;
 
-    // 3. Auto-sync database if actual calculated state differs from `doc.isOpen`
+    // Only sync isOpen, NEVER flip status to inactive here
     if (doc.isOpen !== shouldBeOpen) {
         doc.isOpen = shouldBeOpen;
-      doc.status = shouldBeOpen? "active" : "inactive"
-
-        // Save or update atomically
-        if (typeof doc.save === "function") {
-            await doc.save();
+        if (typeof (doc as any).save === "function") {
+            await (doc as any).save();
         } else {
             await Schedule.findByIdAndUpdate(doc._id, { isOpen: shouldBeOpen });
         }
