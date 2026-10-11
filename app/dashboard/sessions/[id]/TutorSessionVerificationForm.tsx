@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import EditSessionModalContent from "./EditSessionModalContent";
-import EditBeginnerSessionModalContent from "./EditBeginnerSessionModalContent"; // <-- ADD THIS
+import EditBeginnerSessionModalContent from "./editBeginnerSessionModalContent"; // <-- ADD THIS
 import { verifyAndCompleteSession } from "@/actions/session.action";
 import {
     AttendanceStatus,
