@@ -14,25 +14,62 @@ function minutesToTime(minutes: number): string {
   return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
 }
 
+// Client-side WAT check - same logic as server isScheduleOpen now
+function isOpenClient(schedule: any) {
+  const now = new Date();
+  const nowInLagos = new Date(
+    now.toLocaleString("en-US", { timeZone: "Africa/Lagos" })
+  );
+  const currentDay = nowInLagos.toLocaleString("en-US", {
+    weekday: "long",
+    timeZone: "Africa/Lagos",
+  }).toLowerCase();
+  const currentMinutes = nowInLagos.getHours() * 60 + nowInLagos.getMinutes();
+
+  return (
+    schedule.dayOfWeek.toLowerCase() === currentDay &&
+    currentMinutes >= schedule.startTime &&
+    currentMinutes <= schedule.endTime &&
+    schedule.status === "active"
+  );
+}
+
 export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps) {
   const [isLinkActive, setIsLinkActive] = useState<boolean>(false);
   const [hasMeetLink, setHasMeetLink] = useState<boolean>(false);
   const [nearestSchedule, setNearestSchedule] = useState<any>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Sync state with the exact same check used by the tutor's activate button
   useEffect(() => {
     let isSubscribed = true;
 
     const fetchStatus = async () => {
       try {
+        // 1. Primary: use server getNearestSchedule (now fixed to Lagos)
         const res = await getNearestSchedule();
-
         if (isSubscribed && res?.success && res.data) {
-          setNearestSchedule(res.data);
-          // Matches the exact condition from ActivateNearestScheduleButton
-          setIsLinkActive((res.data as any).status === "active");
-          setHasMeetLink(Boolean(res.data.googleMeetLink || res.data.pseudoLink));
+          const data = res.data as any;
+          setNearestSchedule(data);
+          setIsLinkActive(data.isOpen === true || data.status === "active");
+          setHasMeetLink(Boolean(data.googleMeetLink || data.pseudoLink));
+          return;
+        }
+
+        // 2. Fallback: check tutorGroup.schedules directly on client (WAT)
+        if (tutorGroup?.schedules?.length) {
+          const open = tutorGroup.schedules.find((s: any) => isOpenClient(s));
+          if (open && isSubscribed) {
+            setNearestSchedule(open);
+            setIsLinkActive(true);
+            setHasMeetLink(Boolean(open.googleMeetLink || open.pseudoLink));
+            return;
+          }
+          // If none open, show the first schedule for display
+          if (isSubscribed) {
+            setNearestSchedule(tutorGroup.schedules[0]);
+            setIsLinkActive(false);
+            setHasMeetLink(false);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch schedule status:", error);
@@ -42,15 +79,12 @@ export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps
     };
 
     fetchStatus();
-
-    // Optional polling interval to keep student view reactive if left open
-    const interval = setInterval(fetchStatus, 30000);
-
+    const interval = setInterval(fetchStatus, 30 * 1000);
     return () => {
       isSubscribed = false;
       clearInterval(interval);
     };
-  }, []);
+  }, [tutorGroup]);
 
   if (isLoading) {
     return (
@@ -68,7 +102,7 @@ export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps
     <div
       className={`p-5 border rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition ${
         isLinkActive
-          ? "bg-emerald-50 border-emerald-300 shadow-sm"
+         ? "bg-emerald-50 border-emerald-300 shadow-sm"
           : "bg-gray-50 border-gray-200"
       }`}
     >
@@ -76,9 +110,9 @@ export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps
         <div className="flex items-center gap-2">
           <h3 className="font-bold text-gray-900 text-base">
             {tutorGroup
-              ? `Tutor: ${
+             ? `Tutor: ${
                   (tutorGroup.tutor as any)?.gender === "male"
-                    ? "Ustadh"
+                   ? "Ustadh"
                     : "Ustadhah"
                 } ${(tutorGroup.tutor as any)?.user?.name || "Assigned Ustadh"}`
               : "You have not been assigned to a tutor yet."}
@@ -92,7 +126,7 @@ export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps
         {tutorGroup && (
           <p className="text-sm text-gray-600">
             {nearestSchedule
-              ? `Weekly Slot: ${nearestSchedule.dayOfWeek}s (${minutesToTime(
+             ? `Weekly Slot: ${nearestSchedule.dayOfWeek}s (${minutesToTime(
                   nearestSchedule.startTime
                 )} - ${minutesToTime(nearestSchedule.endTime)})`
               : "No upcoming schedule found."}
@@ -100,7 +134,7 @@ export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps
         )}
       </div>
 
-      {tutorGroup ? (
+      {tutorGroup? (
         <div className="flex items-center gap-3">
           {(tutorGroup?.tutor as any)?.user?.whatsappNumber && (
             <a
@@ -114,8 +148,8 @@ export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps
           )}
           <JoinClassButton
             link={`/join/${tutorGroup?._id}`}
-            // isLinkActive={isLinkActive}
-           isLinkActive={true} meetLinkAvailable={hasMeetLink}
+            isLinkActive={isLinkActive}
+            meetLinkAvailable={hasMeetLink}
           />
         </div>
       ) : null}
