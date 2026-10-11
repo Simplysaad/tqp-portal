@@ -114,8 +114,8 @@ export default function StudentJoinBanner({ tutorGroup }: StudentJoinBannerProps
           )}
           <JoinClassButton
             link={`/join/${tutorGroup?._id}`}
-            isLinkActive={isLinkActive}
-            meetLinkAvailable={hasMeetLink}
+            // isLinkActive={isLinkActive}
+           isLinkActive={true} meetLinkAvailable={hasMeetLink}
           />
         </div>
       ) : null}
