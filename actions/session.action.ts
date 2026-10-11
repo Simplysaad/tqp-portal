@@ -400,20 +400,20 @@ export async function logBeginnerStudentProgress(payload: {
 
 
 
-        update = {
-            start: {
-                chapter: 'الحروف الهجائية (Arabic Alphabet - Names & Shapes)',
-                section: 'المقدمة (Introduction & Alphabet)',
-                page: 2,
-                index: 1
-            },
-            end: {
-                chapter: 'حركة الفتح (Fathah)',
-                section: 'الوحدة الأولى: الحركات Short Vowels (Harakat)',
-                page: 4,
-                index: 2
-            }
-        }
+        // update = {
+        //     start: {
+        //         chapter: 'الحروف الهجائية (Arabic Alphabet - Names & Shapes)',
+        //         section: 'المقدمة (Introduction & Alphabet)',
+        //         page: 2,
+        //         index: 1
+        //     },
+        //     end: {
+        //         chapter: 'حركة الفتح (Fathah)',
+        //         section: 'الوحدة الأولى: الحركات Short Vowels (Harakat)',
+        //         page: 4,
+        //         index: 2
+        //     }
+        // }
 
 
         const updatedSession = await Session.findOneAndUpdate({ _id: session._id }, {
@@ -423,7 +423,7 @@ export async function logBeginnerStudentProgress(payload: {
         console.log("update", update)
         console.log("updatedSession", updatedSession)
 
-        // await session.save();
+        await session.save();
 
         revalidatePath("/dashboard");
         revalidatePath(`/dashboard/sessions/${sessionId}`);
