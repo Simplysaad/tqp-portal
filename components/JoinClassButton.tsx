@@ -11,7 +11,7 @@ export default function JoinClassButton({
     meetLinkAvailable,
     link
 }: StudentJoinClassButtonProps) {
-    if (!isLinkActive && meetLinkAvailable) {
+    if (isLinkActive && meetLinkAvailable) {
         return (
             <a
                 href={link}
