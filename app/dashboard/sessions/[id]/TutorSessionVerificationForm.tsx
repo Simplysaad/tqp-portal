@@ -80,7 +80,7 @@ export default function TutorSessionVerificationForm({
           res = await updateAndVerifyBeginnerSession({
             sessionId: session._id,
             tutorId,
-            attendance: overrideAttendance || attendance,
+           // attendance: overrideAttendance || attendance,
             performance,
             tutorsComment,
             newPosition,
