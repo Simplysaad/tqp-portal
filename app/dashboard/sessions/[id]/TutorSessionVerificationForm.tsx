@@ -70,27 +70,37 @@ export default function TutorSessionVerificationForm({
         setLoading(true);
         setError(null);
 
+      let res; 
         if (isBeginner) {
             if (!newPosition) {
                 setLoading(false);
                 return setError("New position is required for Nuru Al-Bayan students.");
             }
-        } else {
-            if (!newMemorization || typeof newMemorization !== "object" || !newMemorization.start) {
-                setLoading(false);
-                return setError("New memorization range is required for Quran students.");
-            }
-        }
 
-        const res = await verifyAndCompleteSession({
+          res = await updateAndVerifyBeginnerSession({
             sessionId: session._id,
             tutorId,
             attendance: overrideAttendance || attendance,
             performance,
             tutorsComment,
-            newMemorization: isBeginner ? undefined : newMemorization,
-            newPosition: isBeginner ? newPosition : undefined,
+            newPosition,
         });
+
+        } else {
+            if (!newMemorization || typeof newMemorization !== "object" || !newMemorization.start) {
+                setLoading(false);
+                return setError("New memorization range is required for Quran students.");
+            }
+
+         res = await verifyAndCompleteSession({
+            sessionId: session._id,
+            tutorId,
+            attendance: overrideAttendance || attendance,
+            performance,
+            tutorsComment,
+            newMemorization,
+        });
+        }
 
         setLoading(false);
 
@@ -111,7 +121,7 @@ export default function TutorSessionVerificationForm({
                     <div className="flex items-center gap-2">
                         <h2 className="text-xl font-bold text-gray-900">Verify Session Log</h2>
                         {isBeginner && (
-                            <span className="px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full border border-blue-200">
+                            <span className="px-1 md:px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full border border-blue-200">
                                 Nuru Al-Bayan
                             </span>
                         )}
@@ -133,7 +143,7 @@ export default function TutorSessionVerificationForm({
                         {isBeginner ? "Nuru Al-Bayan Progress" : "Student Logged Progress"}
                     </span>
                     <button type="button" onClick={() => setIsEditModalOpen(true)} className="text-xs text-emerald-600 font-medium hover:underline">
-                        ✏️ Edit Details
+                        Edit Details
                     </button>
                 </div>
 
