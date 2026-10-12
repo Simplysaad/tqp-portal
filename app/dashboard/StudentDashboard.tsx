@@ -41,7 +41,7 @@ export default async function StudentDashboard({
   }
 
   // 2. Fetch assigned tutor group
-  const tutorGroup = await TutorGroup.findOne({
+  const rawTutorGroup = await TutorGroup.findOne({
     students: student._id,
     isActive: true,
   })
@@ -54,6 +54,10 @@ export default async function StudentDashboard({
     })
     .populate("schedules")
     .lean();
+
+  const tutorGroup = rawTutorGroup
+    ? JSON.parse(JSON.stringify(rawTutorGroup))
+    : null;
 
   // 3. Fetch Student's Active Academic Goal
   const activeGoal = await Goal.findOne({
@@ -71,7 +75,7 @@ export default async function StudentDashboard({
     .lean();
 
   const latestEvaluatedSession = recentSessions.find(
-    (sess) => sess.tutorsComment || sess.performance
+    (sess) => sess.tutorsComment || sess.performance,
   );
 
   // 5. Attendance Stats
@@ -278,7 +282,8 @@ export default async function StudentDashboard({
               <span>
                 Target Surah:{" "}
                 <strong>
-                  {activeGoal.target?.surah || "N/A"} ({activeGoal.target?.aayah})
+                  {activeGoal.target?.surah || "N/A"} (
+                  {activeGoal.target?.aayah})
                 </strong>
               </span>
             ) : (
