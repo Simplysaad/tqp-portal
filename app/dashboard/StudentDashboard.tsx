@@ -62,10 +62,12 @@ export default async function StudentDashboard({
   // 3. Fetch Student's Active Academic Goal
   const activeGoal = await Goal.findOne({
     student: student._id,
-    status: "in_progress",
+    // status: "in_progress",
   })
     .sort({ createdAt: -1 })
     .lean();
+
+    console.log("activeGoal", activeGoal);
 
   // 4. Fetch Recent Sessions
   const recentSessions = await Session.find({ student: student._id })
