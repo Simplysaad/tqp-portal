@@ -30,6 +30,7 @@ export default function TutorSessionVerificationForm({
 }: TutorSessionVerificationFormProps) {
     const router = useRouter();
 
+    // console.log("session", session);
     const isBeginner =
         session.student?.program === "beginner" || Boolean(session.newPosition);
 
