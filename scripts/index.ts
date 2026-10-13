@@ -3,7 +3,7 @@ import User from "@/models/user.model";
 import Student from "@/models/student.model";
 import  connectDB  from "@/lib/db";
 
-export async function migrateToBeginner({ dryRun = true }: { dryRun: boolean }) {
+export async function migrateToBeginner({ dryRun = true }: { dryRun?: boolean }) {
   await connectDB();
 
   // 1. Find all students where student.program!= beginner
