@@ -30,7 +30,7 @@ export const metadata: Metadata = generateOSFAMetadata({
 
 export default function LandingPage() {
 
-migrateToBeginner()
+migrateToBeginner({dryRun: true})
 
 
     return (
