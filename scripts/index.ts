@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import User from "@/models/user.model";
 import Student from "@/models/student.model";
-import { connectDB } from "@/lib/db"; // your db connector
+import  connectDB  from "@/lib/db";
 
 export async function migrateToBeginner({ dryRun = true }: { dryRun: boolean }) {
   await connectDB();
