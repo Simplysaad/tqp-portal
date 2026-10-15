@@ -28,6 +28,13 @@ function ForgotPasswordContent() {
     startTransition(async () => {
       try {
         const res = await requestPasswordReset(formData);
+        if(!res){
+setMessage({
+            type: "error",
+            text: "error encountered while requesting token, please try again later.",
+          });
+
+}
 
         if (res.error) {
           setMessage({
