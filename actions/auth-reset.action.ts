@@ -8,6 +8,7 @@ import connectDB  from "@/lib/db";
 import { PasswordResetToken } from "@/models/passwordResetToken.model";
 import { generateResetToken, hashToken } from "@/lib/tokens";
 import User from "@/models/user.model";
+import { redirect } from "next/navigation"; // Added for direct redirection
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -19,6 +20,9 @@ export async function requestPasswordReset(formData: FormData) {
   if (!email || typeof email !== "string") {
     return { error: "Please provide a valid email address." };
   }
+
+  // Define this outside the try block so it's accessible by the redirect function
+  let resetUrl = "";
 
   try {
     await connectDB();
@@ -45,11 +49,16 @@ export async function requestPasswordReset(formData: FormData) {
       userId: user._id,
     });
 
-    const resetUrl = `${process.env.BASE_URL}/reset-password?token=${rawToken}`;
+    // Generate the URL (Fallback to localhost if BASE_URL environment variable is missing)
+    const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+    resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
 
-    // Send email via Resend
+    /* -------------------------------------------------------------------------- */
+    /* BYPASSED: Email system skipped temporarily                                 */
+    /* -------------------------------------------------------------------------- */
+    /*
     await resend.emails.send({
-      from: "Security <onboarding@resend.dev>", // Replace with your verified domain
+      from: "Security <onboarding@resend.dev>", 
       to: user.email,
       subject: "Reset your password",
       html: `
@@ -61,16 +70,20 @@ export async function requestPasswordReset(formData: FormData) {
         </div>
       `,
     });
+    */
 
-    return {
-      success:
-        "If an account exists with that email, we sent a link to reset your password.",
-    };
   } catch (error) {
     console.error("Forgot password error:", error);
     return { error: "An unexpected error occurred. Please try again later." };
   }
+
+  // Next.js redirect must be called outside the try/catch block 
+  // because it works by throwing an internal routing error.
+  if (resetUrl) {
+    redirect(resetUrl);
+  }
 }
+
 
 // Action 2: Reset Password with Token
 export async function resetPassword(formData: FormData) {
