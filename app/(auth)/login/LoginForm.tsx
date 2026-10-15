@@ -168,7 +168,7 @@ function LoginFormContent() {
                 Register Here
               </Link>
             </span>
-            <span className="">
+           {/* <span className="">
               Forgot your password?{" "}
               <Link
                 href={forgotPasswordHref}
@@ -176,7 +176,7 @@ function LoginFormContent() {
               >
                 Reset It Here
               </Link>
-            </span>
+            </span> */}
           </div>
           <div className="pt-4 border-t border-gray-100 text-center text-xs text-gray-600"></div>
         </div>
