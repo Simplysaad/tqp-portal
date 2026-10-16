@@ -167,9 +167,6 @@ export async function createSchedule(data: CreateScheduleInput) {
         };
     }
 
-    const tutorGroup = await TutorGroup.findOne({ tutor: tutorId });
-    if (!tutorGroup) return { success: false, error: "Tutor Group not found" };
-
     // Prevent overlapping slots
     const existingOverlap = await Schedule.findOne({
         tutor: tutorId,
@@ -197,8 +194,11 @@ export async function createSchedule(data: CreateScheduleInput) {
         status: "active"
     });
 
-    tutorGroup.schedules.push(newSchedule._id);
-    await tutorGroup.save();
+    const tutorGroup = await TutorGroup.findOne({ tutor: tutorId });
+    if (tutorGroup) {
+        tutorGroup.schedules.push(newSchedule._id);
+        await tutorGroup.save();
+    }
 
     revalidatePath("/dashboard");
     return { success: true, schedule: JSON.parse(JSON.stringify(newSchedule)) };
