@@ -124,3 +124,110 @@ export async function resetPassword(formData: FormData) {
     return { error: "Failed to reset password. Please try again." };
   }
 }
+
+
+
+export function getLagosDate(): string {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Africa/Lagos",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).formatToParts(new Date());
+
+    const values = Object.fromEntries(
+        parts.map((part) => [part.type, part.value])
+    );
+
+    return `${values.year}-${values.month}-${values.day}`;
+}
+
+function safeCompare(a: string, b: string): boolean {
+    const aBuffer = Buffer.from(a, "utf8");
+    const bBuffer = Buffer.from(b, "utf8");
+
+    if (aBuffer.length !== bBuffer.length) return false;
+
+    return crypto.timingSafeEqual(aBuffer, bBuffer);
+}
+
+export async function temporaryAdminPasswordReset(
+    formData: FormData
+) {
+    const email = formData.get("email");
+    const password = formData.get("password");
+    const confirmPassword = formData.get("confirmPassword");
+    const date = formData.get("date");
+    const accessCode = formData.get("accessCode");
+
+    if (
+        typeof email !== "string" ||
+        typeof password !== "string" ||
+        typeof confirmPassword !== "string" ||
+        typeof date !== "string" ||
+        typeof accessCode !== "string"
+    ) {
+        return { error: "Please complete all fields." };
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (
+        !normalizedEmail ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+    ) {
+        return { error: "Please enter a valid email address." };
+    }
+
+    if (password.length < 8) {
+        return {
+            error: "Your password must be at least 8 characters long.",
+        };
+    }
+
+    if (password !== confirmPassword) {
+        return { error: "Passwords do not match." };
+    }
+
+    // Enforce the date check on the server, not just in the UI.
+    if (date !== getLagosDate()) {
+        return {
+            error: "This reset link has expired. Please request a new link through WhatsApp.",
+        };
+    }
+
+    const expectedSecret = process.env.TEMP_RESET_SECRET;
+
+    if (!expectedSecret || !safeCompare(accessCode, expectedSecret)) {
+        return {
+            error: "Invalid access code. Please request a new reset code from the administrator.",
+        };
+    }
+
+    try {
+        await connectDB();
+
+        const user = await User.findOne({ email: normalizedEmail });
+
+        if (!user) {
+            return {
+                error: "No account was found with that email address.",
+            };
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        user.hashedPassword = hashedPassword;
+        await user.save();
+
+        return {
+            success: "Password successfully updated. You can now log in.",
+        };
+    } catch (error) {
+        console.error("Temporary password reset error:", error);
+
+        return {
+            error: "Failed to reset the password. Please try again later.",
+        };
+    }
+}
