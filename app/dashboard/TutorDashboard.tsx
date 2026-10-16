@@ -6,12 +6,12 @@ import TutorStudentsList from "@/components/TutorStudentsList";
 import CreateScheduleModal from "@/components/CreateScheduleModal";
 import EditScheduleModal from "@/components/EditScheduleModal";
 import UnapprovedSessionsList from "@/components/UnapprovedSessionsList";
+import DeleteScheduleButton from "@/components/DeleteScheduleButton";
 import Session from "@/models/session.model";
 
 interface TutorDashboardProps {
     userId: string;
 }
-
 
 export default async function TutorDashboard({ userId }: TutorDashboardProps) {
     await connectDB();
@@ -31,15 +31,16 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
         .sort({ dayOfWeek: 1, startTime: 1 })
         .lean<IScheduleDocument[]>({ virtuals: true });
 
-
-    const rawSessions = await Session.find({ tutor: tutor._id }).populate({
-        path: "student",
-        select: "_id",
-        populate: {
-            path: "user",
-            select: "_id name"
-        }
-    }).lean()
+    const rawSessions = await Session.find({ tutor: tutor._id })
+        .populate({
+            path: "student",
+            select: "_id",
+            populate: {
+                path: "user",
+                select: "_id name",
+            },
+        })
+        .lean();
 
     const sessions = JSON.parse(JSON.stringify(rawSessions));
 
@@ -58,7 +59,7 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
             </div>
 
             {/* Quick Action: Start/Activate Session */}
-            <div className="p-5 border rounded-lg bg-emerald-50 border-emerald-200 not-md:flex-col not-md:gap-4 flex justify-between  items-center">
+            <div className="p-5 border rounded-lg bg-emerald-50 border-emerald-200 not-md:flex-col not-md:gap-4 flex justify-between items-center">
                 <div>
                     <h3 className="font-semibold text-emerald-900">Start Today's Session</h3>
                     <p className="text-sm text-emerald-700">
@@ -112,7 +113,18 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
                                         <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded font-medium">
                                             {item.mode}
                                         </span>
-                                        {/* Edit Schedule Modal Button */}
+
+                                        <DeleteScheduleButton
+                                            schedule={{
+                                                _id: item._id.toString(),
+                                                dayOfWeek: item.dayOfWeek,
+                                                startTime: item.startTime,
+                                                endTime: item.endTime,
+                                                mode: item.mode,
+                                                googleMeetLink: item.googleMeetLink,
+                                            }}
+                                        />
+
                                         <EditScheduleModal
                                             schedule={{
                                                 _id: item._id.toString(),
@@ -155,12 +167,6 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
                                         </a>
                                     </div>
                                 )}
-
-                                <div className="pt-2 border-t text-xs text-gray-500 flex justify-between items-center">
-                                    <span>
-                                        {/* Enrolled: {item.students ? item.students.length : 0} / {item.maxCapacity || 1} student(s) */}
-                                    </span>
-                                </div>
                             </div>
                         ))}
                     </div>
