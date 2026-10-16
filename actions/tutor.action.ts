@@ -279,6 +279,48 @@ export async function updateSchedule(data: UpdateScheduleInput) {
     };
 }
 
+export async function deleteSchedule(scheduleId: string) {
+    const currentUser = await getSession();
+    if (!currentUser) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    if (!scheduleId) {
+        return { success: false, error: "Schedule ID is required" };
+    }
+
+    await connectDB();
+
+    const schedule = await Schedule.findById(scheduleId);
+    if (!schedule) {
+        return { success: false, error: "Schedule not found" };
+    }
+
+    // Permission check
+    if (currentUser.role === "tutor") {
+        const tutor = await Tutor.findOne({ user: currentUser.id });
+        if (!tutor || tutor._id.toString() !== schedule.tutor.toString()) {
+            return { success: false, error: "Not allowed to delete this schedule" };
+        }
+    } else if (currentUser.role !== "admin") {
+        return { success: false, error: "Insufficient role" };
+    }
+
+    // 1. Remove from TutorGroup
+    await TutorGroup.updateOne(
+        { tutor: schedule.tutor },
+        { $pull: { schedules: schedule._id } }
+    );
+
+    // 2. Delete schedule (hard delete)
+    // If you want soft delete, replace with: schedule.status = "inactive" and await schedule.save()
+    await Schedule.findByIdAndDelete(scheduleId);
+
+    revalidatePath("/dashboard");
+    return { success: true };
+}
+
+
 const DAYS_ORDER: DayOfWeek[] = [
     "sunday",
     "monday",
