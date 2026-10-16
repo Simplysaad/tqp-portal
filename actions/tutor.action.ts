@@ -189,8 +189,7 @@ export async function createSchedule(data: CreateScheduleInput) {
         startTime: data.startTime,
         endTime: data.endTime,
         mode: data.mode || "online",
-        googleMeetLink:
-            data.mode !== "offline" ? data.googleMeetLink : undefined,
+        googleMeetLink: data.googleMeetLink,
         status: "active"
     });
 
