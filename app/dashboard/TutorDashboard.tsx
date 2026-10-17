@@ -75,7 +75,7 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
             today.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 max-md:flex-wrap ">
           <ActivateNearestScheduleButton />
           <CreateScheduleModal buttonLabel="Create Schedule" />
         </div>
@@ -109,7 +109,7 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
 
       {/* Active Class Schedules */}
       <div className="border rounded-lg p-5 bg-white shadow-sm space-y-4">
-        <div className="flex justify-between items-center border-b pb-3">
+        <div className="flex gap-2 max-md:flex-wrap justify-between items-center border-b pb-3">
           <div>
             <h3 className="font-semibold text-gray-800">
               Active Class Schedules

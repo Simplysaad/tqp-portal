@@ -9,8 +9,14 @@ import {
 import SearchableSelect from "@/components/SearchableSelect";
 import { QURAN_SURAHS } from "@/lib/surah";
 import { getDepartments, getFaculties } from "@/lib/faculties";
-import { MemorizationPosition } from "@/lib/quran";
 import BeginnerOnboardingForm from "./BeginnerOnboarding";
+
+export interface MemorizationPosition {
+  surah: string;
+  aayah: number | string;
+  juz?: number | string;
+  page?: number | string;
+}
 
 export interface FormState {
     gender: "male" | "female" | "";

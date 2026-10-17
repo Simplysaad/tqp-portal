@@ -13,9 +13,17 @@ import {
     IMemorizationRange,
     INuruAlBayanRange,
 } from "@/models/session.model";
-import { MemorizationPosition } from "@/lib/quran";
 import { NuruAlBayanPosition } from "@/app/onboarding/BeginnerOnboarding";
 
+
+
+
+export interface MemorizationPosition {
+  surah: string;
+  aayah: number | string;
+  juz?: number | string;
+  page?: number | string;
+}
 interface TutorSessionVerificationFormProps {
     session: Omit<ISession, "student"> & {
         _id: string;

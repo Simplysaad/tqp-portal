@@ -4,7 +4,6 @@ import React, { useState, useMemo, useEffect } from "react";
 import SearchableSelect from "@/components/SearchableSelect";
 import { QURAN_SURAHS } from "@/lib/surah";
 import { IMemorizationRange, INuruAlBayanRange } from "@/models/session.model";
-import { getMemorizationPosition } from "@/lib/quran";
 
 interface EditSessionModalContentProps {
   initialNewMem?: IMemorizationRange;
@@ -12,7 +11,6 @@ interface EditSessionModalContentProps {
   isBeginner?: boolean;
   initialNewPosition?: INuruAlBayanRange;
   onSave: (newMem: IMemorizationRange) => void;
-  // onSave: (newMem: IMemorizationRange,  pos: INuruAlBayanRange) => void;
   onClose: () => void;
 }
 
@@ -25,64 +23,37 @@ export default function EditSessionModalContent({
   onClose,
 }: EditSessionModalContentProps) {
   // 1. New Memorization State
-  const [startSurah, setStartSurah] = useState(
-    initialNewMem?.start?.surah || "",
-  );
-  const [startAayah, setStartAayah] = useState<number | "">(
-    Number(initialNewMem?.start?.aayah) || "",
-  );
-  const [startPage, setStartPage] = useState<number | "">(
-    Number(initialNewMem?.start?.page) || "",
-  );
+  const [startSurah, setStartSurah] = useState(initialNewMem?.start?.surah || "");
+  const [startAayah, setStartAayah] = useState<number | "">(Number(initialNewMem?.start?.aayah) || "");
+  const [startPage, setStartPage] = useState<number | "">(Number(initialNewMem?.start?.page) || "");
 
   const [endSurah, setEndSurah] = useState(initialNewMem?.end?.surah || "");
-  const [endAayah, setEndAayah] = useState<number | "">(
-    Number(initialNewMem?.end?.aayah) || "",
-  );
-  const [endPage, setEndPage] = useState<number | "">(
-    Number(initialNewMem?.end?.page) || "",
-  );
+  const [endAayah, setEndAayah] = useState<number | "">(Number(initialNewMem?.end?.aayah) || "");
+  const [endPage, setEndPage] = useState<number | "">(Number(initialNewMem?.end?.page) || "");
 
   // 2. Revision State
-  const [revStartSurah, setRevStartSurah] = useState(
-    initialRev?.start?.surah || "",
-  );
-  const [revStartAayah, setRevStartAayah] = useState<number | "">(
-    Number(initialRev?.start?.aayah) || "",
-  );
-  const [revStartPage, setRevStartPage] = useState<number | "">(
-    Number(initialRev?.start?.page) || "",
-  );
+  const [revStartSurah, setRevStartSurah] = useState(initialRev?.start?.surah || "");
+  const [revStartAayah, setRevStartAayah] = useState<number | "">(Number(initialRev?.start?.aayah) || "");
+  const [revStartPage, setRevStartPage] = useState<number | "">(Number(initialRev?.start?.page) || "");
 
   const [revEndSurah, setRevEndSurah] = useState(initialRev?.end?.surah || "");
-  const [revEndAayah, setRevEndAayah] = useState<number | "">(
-    Number(initialRev?.end?.aayah) || "",
-  );
-  const [revEndPage, setRevEndPage] = useState<number | "">(
-    Number(initialRev?.end?.page) || "",
-  );
+  const [revEndAayah, setRevEndAayah] = useState<number | "">(Number(initialRev?.end?.aayah) || "");
+  const [revEndPage, setRevEndPage] = useState<number | "">(Number(initialRev?.end?.page) || "");
 
   // 3. UI Status State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const surahOptions = useMemo(
-    () =>
-      QURAN_SURAHS.map((s) => ({
-        label: `${s.number}. ${s.name}`,
-        value: s.name,
-      })),
-    [],
+    () => QURAN_SURAHS.map((s) => ({ label: `${s.number}. ${s.name}`, value: s.name })),
+    []
   );
 
   const getMaxAyahs = (surahName: string) => {
-    const found = QURAN_SURAHS.find(
-      (s) => s.name.toLowerCase() === surahName.toLowerCase(),
-    );
+    const found = QURAN_SURAHS.find((s) => s.name.toLowerCase() === surahName.toLowerCase());
     return found ? found.totalAayahs : 286;
   };
 
-  // --- Auto-calculate Pages using useEffect ---
 
   // New Mem Start Page
   useEffect(() => {
@@ -91,12 +62,11 @@ export default function EditSessionModalContent({
       return;
     }
     let isMounted = true;
-    getMemorizationPosition(startSurah, Number(startAayah))
-      .then((pos) => isMounted && setStartPage(Number(pos.page)))
+    fetch(`/api/quran-position?surah=${encodeURIComponent(startSurah)}&aayah=${startAayah}`)
+      .then((res) => res.json())
+      .then((pos) => isMounted && pos.page && setStartPage(Number(pos.page)))
       .catch(() => isMounted && setStartPage(""));
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [startSurah, startAayah]);
 
   // New Mem End Page
@@ -106,12 +76,11 @@ export default function EditSessionModalContent({
       return;
     }
     let isMounted = true;
-    getMemorizationPosition(endSurah, Number(endAayah))
-      .then((pos) => isMounted && setEndPage(Number(pos.page)))
+    fetch(`/api/quran-position?surah=${encodeURIComponent(endSurah)}&aayah=${endAayah}`)
+      .then((res) => res.json())
+      .then((pos) => isMounted && pos.page && setEndPage(Number(pos.page)))
       .catch(() => isMounted && setEndPage(""));
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [endSurah, endAayah]);
 
   // Revision Start Page
@@ -121,12 +90,11 @@ export default function EditSessionModalContent({
       return;
     }
     let isMounted = true;
-    getMemorizationPosition(revStartSurah, Number(revStartAayah))
-      .then((pos) => isMounted && setRevStartPage(Number(pos.page)))
+    fetch(`/api/quran-position?surah=${encodeURIComponent(revStartSurah)}&aayah=${revStartAayah}`)
+      .then((res) => res.json())
+      .then((pos) => isMounted && pos.page && setRevStartPage(Number(pos.page)))
       .catch(() => isMounted && setRevStartPage(""));
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [revStartSurah, revStartAayah]);
 
   // Revision End Page
@@ -136,12 +104,11 @@ export default function EditSessionModalContent({
       return;
     }
     let isMounted = true;
-    getMemorizationPosition(revEndSurah, Number(revEndAayah))
-      .then((pos) => isMounted && setRevEndPage(Number(pos.page)))
+    fetch(`/api/quran-position?surah=${encodeURIComponent(revEndSurah)}&aayah=${revEndAayah}`)
+      .then((res) => res.json())
+      .then((pos) => isMounted && pos.page && setRevEndPage(Number(pos.page)))
       .catch(() => isMounted && setRevEndPage(""));
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, [revEndSurah, revEndAayah]);
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -152,33 +119,23 @@ export default function EditSessionModalContent({
     try {
       let updatedNewMem: IMemorizationRange = {};
       if (startSurah && startAayah && endSurah && endAayah) {
-        const start = await getMemorizationPosition(
-          startSurah,
-          Number(startAayah),
-        );
-        const end = await getMemorizationPosition(endSurah, Number(endAayah));
+        const start = await fetch(`/api/quran-position?surah=${encodeURIComponent(startSurah)}&aayah=${startAayah}`).then(r => r.json());
+        const end = await fetch(`/api/quran-position?surah=${encodeURIComponent(endSurah)}&aayah=${endAayah}`).then(r => r.json());
+        if (start.error || end.error) throw new Error(start.error || end.error);
         updatedNewMem = { start, end };
       }
 
       let updatedRev: IMemorizationRange = {};
       if (revStartSurah && revStartAayah && revEndSurah && revEndAayah) {
-        const start = await getMemorizationPosition(
-          revStartSurah,
-          Number(revStartAayah),
-        );
-        const end = await getMemorizationPosition(
-          revEndSurah,
-          Number(revEndAayah),
-        );
+        const start = await fetch(`/api/quran-position?surah=${encodeURIComponent(revStartSurah)}&aayah=${revStartAayah}`).then(r => r.json());
+        const end = await fetch(`/api/quran-position?surah=${encodeURIComponent(revEndSurah)}&aayah=${revEndAayah}`).then(r => r.json());
+        if (start.error || end.error) throw new Error(start.error || end.error);
         updatedRev = { start, end };
       }
 
       onSave(updatedNewMem);
     } catch (err: any) {
-      setError(
-        err.message ||
-          "Failed to calculate Quran positions. Please check your inputs.",
-      );
+      setError(err.message || "Failed to calculate Quran positions. Please check your inputs.");
     } finally {
       setIsSubmitting(false);
     }
@@ -199,15 +156,13 @@ export default function EditSessionModalContent({
       {/* NEW MEMORIZATION SECTION */}
       <div className="space-y-3 pb-4">
         <h4 className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
-          New Memorization (Sabqi)
+          New Memorization
         </h4>
 
         {/* Start Position */}
         <div className="grid grid-cols-3 gap-2">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">
-              Start Surah
-            </label>
+            <label className="block text-xs text-gray-600 mb-1">Start Surah</label>
             <SearchableSelect
               options={surahOptions}
               value={startSurah}
@@ -216,26 +171,18 @@ export default function EditSessionModalContent({
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">
-              Start Ayah
-            </label>
+            <label className="block text-xs text-gray-600 mb-1">Start Ayah</label>
             <input
               type="number"
               min={1}
               max={getMaxAyahs(startSurah)}
               value={startAayah}
-              onChange={(e) =>
-                setStartAayah(
-                  e.target.value === "" ? "" : Number(e.target.value),
-                )
-              }
+              onChange={(e) => setStartAayah(e.target.value === "" ? "" : Number(e.target.value))}
               className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">
-              Page (Auto)
-            </label>
+            <label className="block text-xs text-gray-600 mb-1">Page (Auto)</label>
             <input
               type="number"
               value={startPage}
@@ -249,9 +196,7 @@ export default function EditSessionModalContent({
         {/* End Position */}
         <div className="grid grid-cols-3 gap-2">
           <div>
-            <label className="block text-xs text-gray-600 mb-1">
-              End Surah
-            </label>
+            <label className="block text-xs text-gray-600 mb-1">End Surah</label>
             <SearchableSelect
               options={surahOptions}
               value={endSurah}
@@ -266,16 +211,12 @@ export default function EditSessionModalContent({
               min={1}
               max={getMaxAyahs(endSurah)}
               value={endAayah}
-              onChange={(e) =>
-                setEndAayah(e.target.value === "" ? "" : Number(e.target.value))
-              }
+              onChange={(e) => setEndAayah(e.target.value === "" ? "" : Number(e.target.value))}
               className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-600 mb-1">
-              Page (Auto)
-            </label>
+            <label className="block text-xs text-gray-600 mb-1">Page (Auto)</label>
             <input
               type="number"
               value={endPage}
@@ -286,79 +227,6 @@ export default function EditSessionModalContent({
           </div>
         </div>
       </div>
-
-      {/* REVISION SECTION */}
-      {/* <div className="space-y-3">
-        <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">
-          Revision (Manzil)
-        </h4>
-
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">Start Surah</label>
-            <SearchableSelect
-              options={surahOptions}
-              value={revStartSurah}
-              onChange={setRevStartSurah}
-              placeholder="Start Surah"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">Start Ayah</label>
-            <input
-              type="number"
-              min={1}
-              max={getMaxAyahs(revStartSurah)}
-              value={revStartAayah}
-              onChange={(e) => setRevStartAayah(e.target.value === "" ? "" : Number(e.target.value))}
-              className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">Page (Auto)</label>
-            <input
-              type="number"
-              value={revStartPage}
-              disabled
-              placeholder="Auto"
-              className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-500 rounded-lg text-sm cursor-not-allowed outline-none"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">End Surah</label>
-            <SearchableSelect
-              options={surahOptions}
-              value={revEndSurah}
-              onChange={setRevEndSurah}
-              placeholder="End Surah"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">End Ayah</label>
-            <input
-              type="number"
-              min={1}
-              max={getMaxAyahs(revEndSurah)}
-              value={revEndAayah}
-              onChange={(e) => setRevEndAayah(e.target.value === "" ? "" : Number(e.target.value))}
-              className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-          <div>
-            <label className="block text-xs text-gray-600 mb-1">Page (Auto)</label>
-            <input
-              type="number"
-              value={revEndPage}
-              disabled
-              placeholder="Auto"
-              className="w-full px-3 py-2 border border-gray-200 bg-gray-100 text-gray-500 rounded-lg text-sm cursor-not-allowed outline-none"
-            />
-          </div>
-        </div>
-      </div> */}
 
       <div className="flex justify-end space-x-2 pt-4">
         <button
