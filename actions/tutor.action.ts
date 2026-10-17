@@ -4,28 +4,36 @@ import { revalidatePath } from "next/cache";
 import mongoose from "mongoose";
 import connectDB from "@/lib/db";
 import Tutor, { timeToMinutes } from "@/models/tutor.model";
-import Schedule, { DayOfWeek, ScheduleMode, IScheduleDocument, ISchedule } from "@/models/schedule.model";
+import Schedule, {
+    DayOfWeek,
+    ScheduleMode,
+    IScheduleDocument,
+    ISchedule
+} from "@/models/schedule.model";
 import { getSession } from "./user.action";
 import Student from "@/models/student.model";
 import { timeStringToMinutes } from "@/lib/time";
 import TutorGroup from "@/models/tutorGroup.model";
 
-
 export interface CompleteTutorOnboardingInput {
     userId: string;
     gender: "male" | "female";
     maximumStudents?: number;
-    schedules: CreateScheduleInput[]
+    schedules: CreateScheduleInput[];
 }
-
-
-
 
 export interface UpdateScheduleInput {
     scheduleId: string;
-    dayOfWeek: "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+    dayOfWeek:
+        | "monday"
+        | "tuesday"
+        | "wednesday"
+        | "thursday"
+        | "friday"
+        | "saturday"
+        | "sunday";
     startTime: number; // in minutes
-    endTime: number;   // in minutes
+    endTime: number; // in minutes
     googleMeetLink?: string;
     mode?: "online" | "physical";
     maxCapacity?: number;
@@ -43,23 +51,22 @@ export interface CreateScheduleInput {
     maxCapacity?: number;
 }
 
-
-export async function completeTutorOnboarding(data: CompleteTutorOnboardingInput) {
-
-
+export async function completeTutorOnboarding(
+    data: CompleteTutorOnboardingInput
+) {
     /**
      * Onboarding process
-     * create tutor info : user, gender, 
-     * create tutorGroup: tutorId, rules.maxCapacity, 
-     * create schedules: 
-     * 
+     * create tutor info : user, gender,
+     * create tutorGroup: tutorId, rules.maxCapacity,
+     * create schedules:
+     *
      */
 
     try {
         await connectDB();
 
         // Convert string userId to ObjectId
-        const currentUser = await getSession()
+        const currentUser = await getSession();
 
         const { id: userId } = currentUser;
 
@@ -72,51 +79,51 @@ export async function completeTutorOnboarding(data: CompleteTutorOnboardingInput
                 $setOnInsert: {
                     user: userObjectId,
                     gender: data.gender,
-                    maximumStudents: data.maximumStudents,
-                },
+                    maximumStudents: data.maximumStudents
+                }
             },
             {
                 upsert: true,
                 new: true,
-                setDefaultsOnInsert: true,
+                setDefaultsOnInsert: true
             }
         );
 
-        // Now create schedules 
-        const formattedSchedules = data.schedules.map((schedule) => ({
+        // Now create schedules
+        const formattedSchedules = data.schedules.map(schedule => ({
             ...schedule,
             tutor: tutor._id,
             startTime: timeStringToMinutes(schedule.startTimeStr),
-            endTime: timeStringToMinutes(schedule.endTimeStr),
+            endTime: timeStringToMinutes(schedule.endTimeStr)
         }));
 
-        const createdSchedules = await Schedule.insertMany(formattedSchedules)
+        const createdSchedules = await Schedule.insertMany(formattedSchedules);
 
         // Create TutorGroup
 
-        let schedules = createdSchedules.map((s) => s._id)
+        let schedules = createdSchedules.map(s => s._id);
 
         const tutorGroup = await TutorGroup.create({
             tutor: tutor._id,
             schedules,
             rules: {
                 femaleOnly: data.gender === "female",
-                maxCapacity: data.maximumStudents,
+                maxCapacity: data.maximumStudents
             }
-        })
-
+        });
 
         revalidatePath("/dashboard");
         return { success: true, tutorId: tutor._id.toString() };
     } catch (error: any) {
-        return { success: false, message: error.message || "Failed to create tutor profile." };
+        return {
+            success: false,
+            message: error.message || "Failed to create tutor profile."
+        };
     }
 }
 
-
 export async function createSchedule(data: CreateScheduleInput) {
     const currentUser = await getSession();
-
     if (!currentUser) {
         return { success: false, error: "Unauthorized" };
     }
@@ -126,43 +133,56 @@ export async function createSchedule(data: CreateScheduleInput) {
         data.endTime = timeStringToMinutes(data.endTimeStr);
     }
 
-    await connectDB();
-
-    // Identify the target tutor
-    let tutorId = data.tutorId;
-
-
-    if (currentUser.role !== "tutor") {
-        return { success: false, error: "Insufficient role to create schedule" };
+    if (
+        data.startTime == null ||
+        data.endTime == null ||
+        data.startTime >= data.endTime
+    ) {
+        return { success: false, error: "Invalid time range" };
     }
 
+    await connectDB();
 
-    const tutor = await Tutor.findOne({ user: currentUser.id });
-    if (!tutor) return { success: false, error: "Tutor profile not found" };
+    let tutorId: string;
 
-    tutorId = tutor._id.toString();
+    // Case 1: Logged in user is a Tutor -> force own ID
+    if (currentUser.role === "tutor") {
+        const tutor = await Tutor.findOne({ user: currentUser.id });
+        if (!tutor) return { success: false, error: "Tutor profile not found" };
+        tutorId = tutor._id.toString();
+    }
+    // Case 2: Logged in user is Admin -> use data.tutorId
+    else if (currentUser.role === "admin") {
+        if (!data.tutorId) {
+            return { success: false, error: "tutorId is required for admin" };
+        }
+        const tutorExists = await Tutor.findById(data.tutorId);
+        if (!tutorExists)
+            return { success: false, error: "Target tutor not found" };
+        tutorId = tutorExists._id.toString();
+    } else {
+        return {
+            success: false,
+            error: "Insufficient role to create schedule"
+        };
+    }
 
-
-    // 1. Prevent Overlapping Slots for the Same Tutor on the Same Day
+    // Prevent overlapping slots
     const existingOverlap = await Schedule.findOne({
         tutor: tutorId,
         dayOfWeek: data.dayOfWeek,
         status: "active",
-        $or: [
-            { startTime: { $lt: data.endTime, $gte: data.startTime } },
-            { endTime: { $gt: data.startTime, $lte: data.endTime } },
-            { startTime: { $lte: data.startTime }, endTime: { $gte: data.endTime } },
-        ],
+        startTime: { $lt: data.endTime },
+        endTime: { $gt: data.startTime }
     });
 
     if (existingOverlap) {
         return {
             success: false,
-            error: `You already have an active schedule overlapping with this time on ${data.dayOfWeek}.`,
+            error: `Tutor already has an active schedule overlapping on ${data.dayOfWeek}.`
         };
     }
 
-    // 2. Create and Save Schedule
     const newSchedule = await Schedule.create({
         tutor: tutorId,
         dayOfWeek: data.dayOfWeek,
@@ -170,13 +190,18 @@ export async function createSchedule(data: CreateScheduleInput) {
         endTime: data.endTime,
         mode: data.mode || "online",
         googleMeetLink: data.googleMeetLink,
-        status: "active",
+        status: "active"
     });
+
+    const tutorGroup = await TutorGroup.findOne({ tutor: tutorId });
+    if (tutorGroup) {
+        tutorGroup.schedules.push(newSchedule._id);
+        await tutorGroup.save();
+    }
 
     revalidatePath("/dashboard");
     return { success: true, schedule: JSON.parse(JSON.stringify(newSchedule)) };
 }
-
 
 export async function updateSchedule(data: UpdateScheduleInput) {
     const session = await getSession();
@@ -203,7 +228,10 @@ export async function updateSchedule(data: UpdateScheduleInput) {
     if (session.role === "tutor") {
         const tutor = await Tutor.findOne({ user: session.id });
         if (!tutor || tutor._id.toString() !== targetTutorId) {
-            return { success: false, error: "Unauthorized to modify this schedule" };
+            return {
+                success: false,
+                error: "Unauthorized to modify this schedule"
+            };
         }
     }
 
@@ -216,14 +244,17 @@ export async function updateSchedule(data: UpdateScheduleInput) {
         $or: [
             { startTime: { $lt: data.endTime, $gte: data.startTime } },
             { endTime: { $gt: data.startTime, $lte: data.endTime } },
-            { startTime: { $lte: data.startTime }, endTime: { $gte: data.endTime } },
-        ],
+            {
+                startTime: { $lte: data.startTime },
+                endTime: { $gte: data.endTime }
+            }
+        ]
     });
 
     if (existingOverlap) {
         return {
             success: false,
-            error: `Schedule overlaps with another existing slot on ${data.dayOfWeek}.`,
+            error: `Schedule overlaps with another existing slot on ${data.dayOfWeek}.`
         };
     }
 
@@ -235,13 +266,58 @@ export async function updateSchedule(data: UpdateScheduleInput) {
             startTime: data.startTime,
             endTime: data.endTime,
             mode: data.mode || existingSchedule.mode || "online",
-            googleMeetLink: data.googleMeetLink ?? existingSchedule.googleMeetLink,
+            googleMeetLink:
+                data.googleMeetLink ?? existingSchedule.googleMeetLink
         },
         { new: true }
     );
 
     revalidatePath("/dashboard");
-    return { success: true, schedule: JSON.parse(JSON.stringify(updatedSchedule)) };
+    return {
+        success: true,
+        schedule: JSON.parse(JSON.stringify(updatedSchedule))
+    };
+}
+
+export async function deleteSchedule(scheduleId: string) {
+    const currentUser = await getSession();
+    if (!currentUser) {
+        return { success: false, error: "Unauthorized" };
+    }
+
+    if (!scheduleId) {
+        return { success: false, error: "Schedule ID is required" };
+    }
+
+    await connectDB();
+
+    const schedule = await Schedule.findById(scheduleId);
+    if (!schedule) {
+        return { success: false, error: "Schedule not found" };
+    }
+
+    // Permission check
+    if (currentUser.role === "tutor") {
+        const tutor = await Tutor.findOne({ user: currentUser.id });
+        if (!tutor || tutor._id.toString() !== schedule.tutor.toString()) {
+            return { success: false, error: "Not allowed to delete this schedule" };
+        }
+    } else if (currentUser.role !== "admin") {
+        return { success: false, error: "Insufficient role" };
+    }
+
+    // 1. Remove from TutorGroup
+    await TutorGroup.updateOne(
+        { tutor: schedule.tutor },
+        { $pull: { schedules: schedule._id } }
+    );
+
+    // 2. Delete schedule (hard delete)
+    // If you want soft delete, replace with: schedule.status = "inactive" and await schedule.save()
+    await Schedule.findByIdAndDelete(scheduleId);
+
+    revalidatePath("/dashboard");
+    return { success: true };
 }
 
 
@@ -252,13 +328,12 @@ const DAYS_ORDER: DayOfWeek[] = [
     "wednesday",
     "thursday",
     "friday",
-    "saturday",
+    "saturday"
 ];
 
-
-
 export async function getNearestSchedule(): Promise<
-    { success: true; data: IScheduleDocument } | { success: false; error: string }
+    | { success: true; data: IScheduleDocument }
+    | { success: false; error: string }
 > {
     const currentUser = await getSession();
     if (!currentUser) {
@@ -273,15 +348,23 @@ export async function getNearestSchedule(): Promise<
             return { success: false, error: "Tutor profile not found" };
         }
         schedules = await Schedule.find({ tutor: tutor._id })
-            .populate({ path: "tutor", populate: { path: "user", select: "name email" } })
+            .populate({
+                path: "tutor",
+                populate: { path: "user", select: "name email" }
+            })
             .lean<IScheduleDocument[]>();
     } else {
-        const student = await Student.findOne({ user: currentUser.id || currentUser.userId }).lean();
+        const student = await Student.findOne({
+            user: currentUser.id || currentUser.userId
+        }).lean();
         if (!student) {
             return { success: false, error: "Student profile not found" };
         }
         schedules = await Schedule.find({ students: student._id })
-            .populate({ path: "tutor", populate: { path: "user", select: "name email" } })
+            .populate({
+                path: "tutor",
+                populate: { path: "user", select: "name email" }
+            })
             .lean<IScheduleDocument[]>();
     }
 
@@ -292,22 +375,29 @@ export async function getNearestSchedule(): Promise<
     // --- CLEAN TIMEZONE PARSING (Africa/Lagos / UTC+1) ---
     // Extract current day and time explicitly in target timezone (WAT / UTC+1)
     const now = new Date();
-    
+
     // Format options in the target timezone
     const timeFormatter = new Intl.DateTimeFormat("en-US", {
         timeZone: "Africa/Lagos",
         hour12: false,
         weekday: "short",
         hour: "numeric",
-        minute: "numeric",
+        minute: "numeric"
     });
 
     const parts = timeFormatter.formatToParts(now);
-    const getPart = (type: string) => parts.find((p) => p.type === type)?.value || "";
+    const getPart = (type: string) =>
+        parts.find(p => p.type === type)?.value || "";
 
     // Map day name to day index (0 = Sun, 1 = Mon, ..., 6 = Sat)
     const dayMap: Record<string, number> = {
-        Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6
+        Sun: 0,
+        Mon: 1,
+        Tue: 2,
+        Wed: 3,
+        Thu: 4,
+        Fri: 5,
+        Sat: 6
     };
 
     const currentDayIndex: number = dayMap[getPart("weekday")];
@@ -333,13 +423,17 @@ export async function getNearestSchedule(): Promise<
 
         let timeDiffInMinutes: number;
         if (dayDiff === 0) {
-            if (currentMinutes >= schedule.startTime && currentMinutes <= schedule.endTime) {
+            if (
+                currentMinutes >= schedule.startTime &&
+                currentMinutes <= schedule.endTime
+            ) {
                 timeDiffInMinutes = 0;
             } else {
                 timeDiffInMinutes = schedule.startTime - currentMinutes;
             }
         } else {
-            timeDiffInMinutes = dayDiff * 1440 + (schedule.startTime - currentMinutes);
+            timeDiffInMinutes =
+                dayDiff * 1440 + (schedule.startTime - currentMinutes);
         }
 
         if (timeDiffInMinutes < smallestDiff) {
@@ -349,14 +443,14 @@ export async function getNearestSchedule(): Promise<
     }
 
     if (!nearestSchedule) {
-        return { success: false, error: "Could not find a valid upcoming schedule." };
+        return {
+            success: false,
+            error: "Could not find a valid upcoming schedule."
+        };
     }
 
     return { success: true, data: JSON.parse(JSON.stringify(nearestSchedule)) };
 }
-
-
-
 
 export async function activateNearestSchedule() {
     const result = await getNearestSchedule();
@@ -368,7 +462,8 @@ export async function activateNearestSchedule() {
     const nearestSchedule = result.data;
 
     // 5. Toggle Schedule status directly in DB
-    const newStatus = nearestSchedule.status === "active" ? "inactive" : "active";
+    const newStatus =
+        nearestSchedule.status === "active" ? "inactive" : "active";
     const updatedSchedule = await Schedule.findByIdAndUpdate(
         nearestSchedule._id,
         { status: newStatus },
@@ -384,6 +479,6 @@ export async function activateNearestSchedule() {
         data: updatedSchedule,
         message: isActive
             ? `Activated schedule for ${nearestSchedule.dayOfWeek}`
-            : `Deactivated schedule for ${nearestSchedule.dayOfWeek}`,
+            : `Deactivated schedule for ${nearestSchedule.dayOfWeek}`
     };
 }

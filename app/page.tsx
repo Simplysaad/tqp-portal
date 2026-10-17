@@ -20,6 +20,7 @@ import {
 
 import type { Metadata } from "next";
 import { generateOSFAMetadata } from "@/lib/metadata";
+import { migrateToBeginner } from "@/scripts/index";
 
 export const metadata: Metadata = generateOSFAMetadata({
     title: "TQP Structured Learning Management System",
@@ -28,6 +29,10 @@ export const metadata: Metadata = generateOSFAMetadata({
 })
 
 export default function LandingPage() {
+
+migrateToBeginner({dryRun: true})
+
+
     return (
         <div className="min-h-screen bg-[#FBFBF9] text-gray-900 selection:bg-amber-100 selection:text-amber-900 font-sans antialiased">
             {/* =========================================================================

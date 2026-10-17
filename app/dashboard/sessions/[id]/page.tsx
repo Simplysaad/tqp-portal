@@ -61,7 +61,7 @@ export default async function SessionDetailPage({ params }: SessionPageProps) {
     // 3. Authorization Check (Permission Guard)
     const isAssignedStudent = userRole === "student" && session.student?.user?._id.toString() === userId;
     const isAssignedTutor = userRole === "tutor" && session.tutor?.user?._id.toString() === userId;
-    const isBeginner = session.student?.program //currentUser.program === "beginner";
+    const isBeginner = session.student?.program === "beginner" //currentUser.program === "beginner";
 
     console.log("session.student?.program", session.student)
 

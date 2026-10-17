@@ -6,6 +6,7 @@ import TutorStudentsList from "@/components/TutorStudentsList";
 import CreateScheduleModal from "@/components/CreateScheduleModal";
 import EditScheduleModal from "@/components/EditScheduleModal";
 import UnapprovedSessionsList from "@/components/UnapprovedSessionsList";
+import DeleteScheduleButton from "@/components/DeleteScheduleButton";
 import Session from "@/models/session.model";
 
 interface TutorDashboardProps {
@@ -44,7 +45,7 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
     .lean();
 
   const sessions = JSON.parse(JSON.stringify(rawSessions));
-  
+
   return (
     <div className="p-6 space-y-6 max-w-5xl mx-auto">
       {/* Header */}
@@ -64,7 +65,7 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
       </div>
 
       {/* Quick Action: Start/Activate Session */}
-      <div className="p-5 border rounded-lg bg-emerald-50 border-emerald-200 not-md:flex-col not-md:gap-4 flex justify-between  items-center">
+      <div className="p-5 border rounded-lg bg-emerald-50 border-emerald-200 not-md:flex-col not-md:gap-4 flex justify-between items-center">
         <div>
           <h3 className="font-semibold text-emerald-900">
             Start Today's Session
@@ -132,16 +133,22 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
                     {item.dayOfWeek}
                   </span>
                   <div className="flex items-center gap-2">
-                    <span className="bg-emerald-100 text-emerald-800 text-xs px-2 py-0.5 rounded font-medium">
-                      {item.mode}
-                    </span>
-                    {/* Edit Schedule Modal Button */}
                     <EditScheduleModal
                       schedule={{
                         _id: item._id.toString(),
                         dayOfWeek: item.dayOfWeek,
                         startTime: item.startTime,
                         endTime: item.endTime,
+                        googleMeetLink: item.googleMeetLink,
+                      }}
+                    />
+                    <DeleteScheduleButton
+                      schedule={{
+                        _id: item._id.toString(),
+                        dayOfWeek: item.dayOfWeek,
+                        startTime: item.startTime,
+                        endTime: item.endTime,
+                        mode: item.mode,
                         googleMeetLink: item.googleMeetLink,
                       }}
                     />
@@ -179,12 +186,6 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
                     </a>
                   </div>
                 )}
-
-                <div className="pt-2 border-t text-xs text-gray-500 flex justify-between items-center">
-                  <span>
-                    {/* Enrolled: {item.students ? item.students.length : 0} / {item.maxCapacity || 1} student(s) */}
-                  </span>
-                </div>
               </div>
             ))}
           </div>
@@ -200,9 +201,7 @@ export default async function TutorDashboard({ userId }: TutorDashboardProps) {
 
       <TutorStudentsList userId={userId} />
       <UnapprovedSessionsList
-        sessions={sessions.filter(
-          (s: { approved: boolean }) => s.approved === false,
-        )}
+        sessions={sessions.filter((s: { approved: boolean }) => !s.approved)}
       />
     </div>
   );

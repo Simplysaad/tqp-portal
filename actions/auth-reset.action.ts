@@ -8,6 +8,7 @@ import connectDB  from "@/lib/db";
 import { PasswordResetToken } from "@/models/passwordResetToken.model";
 import { generateResetToken, hashToken } from "@/lib/tokens";
 import User from "@/models/user.model";
+import { redirect } from "next/navigation"; // Added for direct redirection
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -20,6 +21,9 @@ export async function requestPasswordReset(formData: FormData) {
     return { error: "Please provide a valid email address." };
   }
 
+  // Define this outside the try block so it's accessible by the redirect function
+  let resetUrl = "";
+
   try {
     await connectDB();
 
@@ -30,7 +34,8 @@ export async function requestPasswordReset(formData: FormData) {
     if (!user) {
       return {
         success:
-          "If an account exists with that email, we sent a link to reset your password.",
+          // "If an account exists with that email, we sent a link to reset your password.",
+          "If an account exists with that email, you will be redirected in a few seconds...",
       };
     }
 
@@ -45,11 +50,16 @@ export async function requestPasswordReset(formData: FormData) {
       userId: user._id,
     });
 
-    const resetUrl = `${process.env.BASE_URL}/reset-password?token=${rawToken}`;
+    // Generate the URL (Fallback to localhost if BASE_URL environment variable is missing)
+    const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+    resetUrl = `${baseUrl}/reset-password?token=${rawToken}`;
 
-    // Send email via Resend
+    /* -------------------------------------------------------------------------- */
+    /* BYPASSED: Email system skipped temporarily                                 */
+    /* -------------------------------------------------------------------------- */
+    /*
     await resend.emails.send({
-      from: "Security <onboarding@resend.dev>", // Replace with your verified domain
+      from: "Security <onboarding@resend.dev>", 
       to: user.email,
       subject: "Reset your password",
       html: `
@@ -61,16 +71,21 @@ export async function requestPasswordReset(formData: FormData) {
         </div>
       `,
     });
+    */
 
-    return {
-      success:
-        "If an account exists with that email, we sent a link to reset your password.",
-    };
   } catch (error) {
     console.error("Forgot password error:", error);
     return { error: "An unexpected error occurred. Please try again later." };
   }
+
+  // Next.js redirect must be called outside the try/catch block 
+  // because it works by throwing an internal routing error.
+  if (resetUrl) {
+    redirect(resetUrl);
+    //return;
+  }
 }
+
 
 // Action 2: Reset Password with Token
 export async function resetPassword(formData: FormData) {
@@ -99,7 +114,7 @@ export async function resetPassword(formData: FormData) {
 
     // Update password on User document
     await User.findByIdAndUpdate(resetRecord.userId, {
-      hashedPassword,
+      password: hashedPassword,
     });
 
     // Delete the used reset token
@@ -111,3 +126,110 @@ export async function resetPassword(formData: FormData) {
     return { error: "Failed to reset password. Please try again." };
   }
 }
+
+
+
+// export function getLagosDate(): string {
+//     const parts = new Intl.DateTimeFormat("en-GB", {
+//         timeZone: "Africa/Lagos",
+//         year: "numeric",
+//         month: "2-digit",
+//         day: "2-digit",
+//     }).formatToParts(new Date());
+
+//     const values = Object.fromEntries(
+//         parts.map((part) => [part.type, part.value])
+//     );
+
+//     return `${values.year}-${values.month}-${values.day}`;
+// }
+
+// function safeCompare(a: string, b: string): boolean {
+//     const aBuffer = Buffer.from(a, "utf8");
+//     const bBuffer = Buffer.from(b, "utf8");
+
+//     if (aBuffer.length !== bBuffer.length) return false;
+
+//     return crypto.timingSafeEqual(aBuffer, bBuffer);
+// }
+
+// export async function temporaryAdminPasswordReset(
+//     formData: FormData
+// ) {
+//     const email = formData.get("email");
+//     const password = formData.get("password");
+//     const confirmPassword = formData.get("confirmPassword");
+//     const date = formData.get("date");
+//     // const accessCode = formData.get("accessCode");
+
+//     if (
+//         typeof email !== "string" ||
+//         typeof password !== "string" ||
+//         typeof confirmPassword !== "string" ||
+//         typeof date !== "string" ||
+//         // typeof accessCode !== "string"
+//     ) {
+//         return { error: "Please complete all fields." };
+//     }
+
+//     const normalizedEmail = email.trim().toLowerCase();
+
+//     if (
+//         !normalizedEmail ||
+//         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)
+//     ) {
+//         return { error: "Please enter a valid email address." };
+//     }
+
+//     if (password.length < 8) {
+//         return {
+//             error: "Your password must be at least 8 characters long.",
+//         };
+//     }
+
+//     if (password !== confirmPassword) {
+//         return { error: "Passwords do not match." };
+//     }
+
+//     // Enforce the date check on the server, not just in the UI.
+//     // if (date !== getLagosDate()) {
+//     //     return {
+//     //         error: "This reset link has expired. Please request a new link through WhatsApp.",
+//     //     };
+//     // }
+
+//     // const expectedSecret = process.env.TEMP_RESET_SECRET;
+
+//     // if (!expectedSecret || !safeCompare(accessCode, expectedSecret)) {
+//     //     return {
+//     //         error: "Invalid access code. Please request a new reset code from the administrator.",
+//     //     };
+//     // }
+
+//     try {
+//         await connectDB();
+
+//         const user = await User.findOne({ email: normalizedEmail });
+
+//         if (!user) {
+//             return {
+//                 error: "No account was found with that email address.",
+//             };
+//         }
+
+//         const hashedPassword = await bcrypt.hash(password, 12);
+
+//         user.password = hashedPassword;
+//         await user.save();
+
+//         return {
+//             success: "Password successfully updated. You can now log in.",
+//         };
+//     } catch (error) {
+//         console.error("Temporary password reset error:", error);
+
+//         return {
+//             error: "Failed to reset the password. Please try again later.",
+//         };
+//     }
+// }
