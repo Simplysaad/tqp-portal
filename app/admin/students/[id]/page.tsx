@@ -48,7 +48,7 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
     const attendanceRate = totalCount > 0 ? Math.round((presentCount / totalCount) * 100) : 0;
     const latestEvaluated = sessions.find((s: any) => s.tutorsComment || s.performance);
 
-    const ratingColors: any = {
+    const ratingColors: Record<string, string> = {
         excellent: "bg-emerald-50 text-emerald-700 border-emerald-200",
         good: "bg-blue-50 text-blue-700 border-blue-200",
         fair: "bg-amber-50 text-amber-700 border-amber-200",
@@ -122,7 +122,7 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
             {/* Latest Feedback */}
             {latestEvaluated && (
                 <div className="p-4 border rounded-xl bg-slate-50 space-y-1">
-                    <div className="flex justify-between"><h3 className="text-xs font-semibold uppercase text-slate-500 flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Latest Feedback</h3><span className={`text-xs px-2 py-0.5 rounded border ${ratingColors[latestEvaluated.performance]}`}>{latestEvaluated.performance}</span></div>
+                    <div className="flex justify-between"><h3 className="text-xs font-semibold uppercase text-slate-500 flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Latest Feedback</h3><span className={`text-xs px-2 py-0.5 rounded border ${latestEvaluated.performance ? ratingColors[latestEvaluated.performance as string] : 'bg-zinc-100'}`}>{latestEvaluated.performance || 'no rating'}</span></div>
                     <p className="text-sm italic">"{latestEvaluated.tutorsComment}"</p>
                     <p className="text-xs text-zinc-400">{new Date(latestEvaluated.date).toLocaleDateString()} • {(latestEvaluated.tutor as any)?.user?.name}</p>
                 </div>
@@ -172,7 +172,7 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
                                     </div>
                                     <div className="flex flex-col items-end gap-1 shrink-0">
                                         <span className={`text-xs px-2 py-0.5 rounded capitalize ${sess.attendance === 'present' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>{sess.attendance}</span>
-                                        {sess.performance && <span className={`text-xs px-2 py-0.5 rounded border capitalize ${ratingColors[sess.performance] || ''}`}>{sess.performance.replace('_',' ')}</span>}
+                                        {sess.performance && <span className={`text-xs px-2 py-0.5 rounded border capitalize ${ratingColors[sess.performance as string] || ''}`}>{sess.performance.replace('_',' ')}</span>}
                                         <Link href={`/dashboard/sessions/${sess._id}`} className="text-xs text-emerald-600 hover:underline">View →</Link>
                                     </div>
                                 </div>
