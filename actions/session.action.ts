@@ -14,9 +14,34 @@ import TutorGroup from "@/models/tutorGroup.model";
 import connectDB from "@/lib/db";
 import { Types } from "mongoose";
 import Goal from "@/models/goal.model";
-import { calculateMemorizationProgress } from "@/lib/quran";
 import Student from "@/models/student.model";
 import { IStudentLogPayload, ITutorVerifyPayload } from "@/types";
+
+export async function calculateMemorizationProgress(
+  startPage?: number,
+  currentPage?: number,
+  targetPage?: number,
+): Promise<number> {
+  if (
+    startPage === undefined ||
+    currentPage === undefined ||
+    targetPage === undefined
+  ) {
+    return 0;
+  }
+
+  const totalPages = Math.abs(targetPage - startPage);
+
+  if (totalPages === 0) return 100;
+
+  const isForward = targetPage > startPage;
+  const completedPages = isForward
+    ? currentPage - startPage
+    : startPage - currentPage;
+
+  const percentage = (completedPages / totalPages) * 100;
+  return Math.min(100, Math.max(0, Math.round(percentage)));
+}
 
 const DAYS_OF_WEEK: DayOfWeek[] = [
   "sunday",
@@ -222,7 +247,7 @@ async function updateStudentGoalAndProgress(
     const startPage = activeGoal.start?.page;
     const targetPage = activeGoal.target?.page;
 
-    const progressPercentage = calculateMemorizationProgress(
+    const progressPercentage = await calculateMemorizationProgress(
       Number(startPage),
       Number(currentPage),
       Number(targetPage),
@@ -526,13 +551,12 @@ export async function updateAndVerifyBeginnerSession(payload: {
       };
     }
 
-    // console.log("session", session);
-
     // Update Session Fields
     if (newPosition) session.newPosition = newPosition;
     if (performanceRating) session.performance = performanceRating;
     if (tutorFeedback) session.tutorsComment = tutorFeedback;
     // if (status) session.status = status;
+    session.approved = true;
 
     await session.save();
 

@@ -228,7 +228,7 @@ export default function TutorSessionVerificationForm({
                         initialNewMem={newMemorization}
                         initialNewPosition={newPosition}
                         isBeginner={false}
-                        onSave={(updatedNewMem, _updatedRev, _updatedPos) => {
+                        onSave={(updatedNewMem) => {
                             setNewMemorization(updatedNewMem);
                             setIsEditModalOpen(false);
                         }}
