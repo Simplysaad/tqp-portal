@@ -1,11 +1,10 @@
-'use server';
+"use server";
 
 import { cookies } from "next/headers";
-import connectDB from '@/lib/db';
-import User, { IUser } from '@/models/user.model';
-import bcrypt from 'bcryptjs';
-import mongoose from 'mongoose';
-
+import connectDB from "@/lib/db";
+import User, { IUser } from "@/models/user.model";
+import bcrypt from "bcryptjs";
+import mongoose from "mongoose";
 
 const SESSION_EXPIRATION_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -20,7 +19,7 @@ async function setUserSessionCookie(user: Record<string, any>) {
         id: user._id,
         email: user.email,
         role: user.role,
-        name: user.name,
+        name: user.name
     });
 
     cookieStore.set("session", sessionData, {
@@ -28,40 +27,52 @@ async function setUserSessionCookie(user: Record<string, any>) {
         secure: process.env.NODE_ENV === "production", // HTTPS only in production
         sameSite: "lax",
         path: "/",
-        expires: new Date(Date.now() + SESSION_EXPIRATION_MS),
+        expires: new Date(Date.now() + SESSION_EXPIRATION_MS)
     });
 }
 
-// 1. Register User Action
 export async function registerUser(formData: IUser) {
     try {
         await connectDB();
 
+        const userExists = await User.findOne({ email: formData.email }).select(
+            "_id name role email"
+        );
+
+        if (userExists) {
+            return {
+                success: false,
+                error: "This email is already registered. Please log in to continue."
+            };
+        }
+
         if (!formData.password) {
-            return { success: false, error: "Error registering user, empty password" };
+            return {
+                success: false,
+                error: "Error registering user, empty password"
+            };
         }
 
         const hashedPassword = await bcrypt.hash(formData.password, 10);
         const newUser = await User.create({
             ...formData,
-            password: hashedPassword,
+            password: hashedPassword
         });
 
         const sanitizedUser = JSON.parse(JSON.stringify(newUser));
         delete sanitizedUser.password;
 
-        // Persist session cookie on registration
         await setUserSessionCookie(sanitizedUser);
-
-
 
         return { success: true, user: sanitizedUser };
     } catch (error: any) {
-        return { success: false, error: error.message || "Registration failed" };
+        return {
+            success: false,
+            error: error.message || "Registration failed"
+        };
     }
 }
 
-// 2. Authenticate User Action
 export async function loginUser(email: string, password: string) {
     try {
         await connectDB();
@@ -122,18 +133,21 @@ export async function getUserById(userId: string) {
         await connectDB();
 
         if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return { success: false, error: 'Invalid user ID' };
+            return { success: false, error: "Invalid user ID" };
         }
 
-        const user = await User.findById(userId).select('-password');
+        const user = await User.findById(userId).select("-password");
 
         if (!user) {
-            return { success: false, error: 'User not found' };
+            return { success: false, error: "User not found" };
         }
 
         return { success: true, user: JSON.parse(JSON.stringify(user)) };
     } catch (error: any) {
-        return { success: false, error: error.message || 'Failed to fetch user' };
+        return {
+            success: false,
+            error: error.message || "Failed to fetch user"
+        };
     }
 }
 
@@ -143,7 +157,7 @@ export async function updateUser(userId: string, updateData: Partial<IUser>) {
         await connectDB();
 
         if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return { success: false, error: 'Invalid user ID' };
+            return { success: false, error: "Invalid user ID" };
         }
 
         const payload = { ...updateData };
@@ -157,15 +171,15 @@ export async function updateUser(userId: string, updateData: Partial<IUser>) {
             userId,
             { $set: payload },
             { new: true, runValidators: true }
-        ).select('-password');
+        ).select("-password");
 
         if (!updatedUser) {
-            return { success: false, error: 'User not found' };
+            return { success: false, error: "User not found" };
         }
 
         return { success: true, user: JSON.parse(JSON.stringify(updatedUser)) };
     } catch (error: any) {
-        return { success: false, error: error.message || 'Update failed' };
+        return { success: false, error: error.message || "Update failed" };
     }
 }
 
@@ -175,30 +189,33 @@ export async function deleteUser(userId: string) {
         await connectDB();
 
         if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return { success: false, error: 'Invalid user ID' };
+            return { success: false, error: "Invalid user ID" };
         }
 
         const deletedUser = await User.findByIdAndDelete(userId);
 
         if (!deletedUser) {
-            return { success: false, error: 'User not found' };
+            return { success: false, error: "User not found" };
         }
 
-        return { success: true, message: 'User deleted successfully' };
+        return { success: true, message: "User deleted successfully" };
     } catch (error: any) {
-        return { success: false, error: error.message || 'Deletion failed' };
+        return { success: false, error: error.message || "Deletion failed" };
     }
 }
 
 // 5. Fetch Users by Role (e.g., list all tutors)
-export async function getUsersByRole(role: 'student' | 'tutor') {
+export async function getUsersByRole(role: "student" | "tutor") {
     try {
         await connectDB();
 
-        const users = await User.find({ role }).select('-password');
+        const users = await User.find({ role }).select("-password");
 
         return { success: true, users: JSON.parse(JSON.stringify(users)) };
     } catch (error: any) {
-        return { success: false, error: error.message || 'Failed to fetch users' };
+        return {
+            success: false,
+            error: error.message || "Failed to fetch users"
+        };
     }
 }
