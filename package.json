@@ -12,6 +12,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "devm": "next dev -H 127.0.0.1 --webpack",
     "build": "next build",
     "start": "next start",
     "e2e": "node e2e/run-e2e.mjs",
