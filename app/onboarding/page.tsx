@@ -1,6 +1,7 @@
 import { getSession, logoutUser } from "@/actions/user.action";
 import StudentOnboardingForm from "./StudentOnboarding";
 import TutorOnboardingForm from "./TutorOnboarding";
+import BeginnerOnboardingForm from "./BeginnerOnboarding"
 import Student from "@/models/student.model";
 import Tutor from "@/models/tutor.model";
 import connectDB from "@/lib/db";
@@ -35,12 +36,20 @@ const Onboarding = async () => {
 
     const isStudent = await Student.findOne({ user: userId });
     const isTutor = await Tutor.findOne({ user: userId });
+    const isBeginner = currentUser?.program === "beginner";
+
+
+    console.log("isbeginner:", isBeginner);
 
     const hasOnboarded = Boolean(isStudent || isTutor);
 
     if (hasOnboarded) {
         redirect("/dashboard");
     }
+
+if(isBeginner){
+return <BeginnerOnboardingForm userId={userId} />;
+}
 
     if (role === "student") {
         return <StudentOnboardingForm userId={userId} />;

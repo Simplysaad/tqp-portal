@@ -93,7 +93,7 @@ export default function TutorOnboardingForm({ userId }: { userId: string }) {
                         <input
                             type="number"
                             name="maximumStudents"
-                            defaultValue={5}
+                            defaultValue={10}
                             min={3}
                             required
                             className="w-full border border-emerald-900/20 p-2.5 rounded-xl text-xs sm:text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-800"

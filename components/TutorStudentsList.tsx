@@ -5,12 +5,12 @@ export default async function TutorStudentsList({ userId }: { userId: string }) 
 
     return (
         <div className="border rounded-lg p-5 bg-white shadow-sm space-y-4">
-            <div className="flex justify-between items-center border-b pb-3">
+            <div className="flex gap-2 max-md:flex-wrap justify-between items-center border-b pb-3">
                 <div>
                     <h3 className="font-semibold text-gray-800">Enrolled Students</h3>
                     <p className="text-xs text-gray-500">Students committed to your class schedules</p>
                 </div>
-                <span className="text-xs bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full">
+                <span className="text-xs hidden md:inline bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full">
                     {students.length} Student(s)
                 </span>
             </div>

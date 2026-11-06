@@ -5,10 +5,16 @@ import SearchableSelect from "@/components/SearchableSelect";
 import { fetchStudentAction, logStudentProgress } from "@/actions/session.action";
 import { fetchMemorizationPositionAction } from "@/actions/quran.action"; // 👈 Import server action
 import { QURAN_SURAHS } from "@/lib/surah";
-import { MemorizationPosition } from "@/lib/quran";
 import { IStudentLogPayload } from "@/types";
 import { getStudent } from "@/lib/db";
 
+
+export interface MemorizationPosition {
+  surah: string;
+  aayah: number | string;
+  juz?: number | string;
+  page?: number | string;
+}
 interface LogProgressFormProps {
     sessionId: string;
     studentId: string;

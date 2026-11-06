@@ -77,7 +77,7 @@ const Navbar = () => {
 
     if (isLandingPage) {
         return (
-            <header className="sticky top-0 z-50 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-amber-900/10">
+            <header className="sticky print:hidden top-0 z-50 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-amber-900/10">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-3 group">
                         <div className="w-10 h-10 rounded-xl bg-emerald-950 flex items-center justify-center text-amber-400 shadow-md shadow-emerald-950/20 group-hover:scale-105 transition-transform border border-amber-500/30">
@@ -121,7 +121,7 @@ const Navbar = () => {
     }
 
     return (
-        <header className="sticky shadow pb-4 top-0 z-50 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-amber-900/10 transition-all">
+        <header className="sticky print:hidden shadow pb-4 top-0 z-50 bg-[#FBFBF9]/90 backdrop-blur-md border-b border-amber-900/10 transition-all">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-16 sm:h-20">
 
@@ -137,11 +137,6 @@ const Navbar = () => {
                                         <span className="font-bold text-lg sm:text-xl tracking-tight text-emerald-950">
                                             TQP <span className="text-amber-600 font-serif font-normal text-base sm:text-lg">Portal</span>
                                         </span>
-                                        {isAdminRoute && (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                                Restricted
-                                            </span>
-                                        )}
                                     </div>
                                     <span className="text-[10px] tracking-widest uppercase font-medium text-emerald-800/70 -mt-1">
                                         {isAdminRoute ? "Admin Operations" : "Tajweed & Retention"}

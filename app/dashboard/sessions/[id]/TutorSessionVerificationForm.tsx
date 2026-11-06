@@ -4,23 +4,30 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Modal from "@/components/Modal";
 import EditSessionModalContent from "./EditSessionModalContent";
-import { verifyAndCompleteSession } from "@/actions/session.action";
+import EditBeginnerSessionModalContent from "./editBeginnerSessionModalContent"; // <-- ADD THIS
+import { verifyAndCompleteSession, updateAndVerifyBeginnerSession } from "@/actions/session.action";
 import {
     AttendanceStatus,
     PerformanceRating,
     ISession,
     IMemorizationRange,
+    INuruAlBayanRange,
 } from "@/models/session.model";
-import { MemorizationPosition } from "@/lib/quran";
+import { NuruAlBayanPosition } from "@/app/onboarding/BeginnerOnboarding";
 
-interface StudentInfo {
-    name: string;
+
+
+
+export interface MemorizationPosition {
+  surah: string;
+  aayah: number | string;
+  juz?: number | string;
+  page?: number | string;
 }
-
 interface TutorSessionVerificationFormProps {
     session: Omit<ISession, "student"> & {
         _id: string;
-        student?: any
+        student?: any;
     };
     tutorId: string;
 }
@@ -31,7 +38,10 @@ export default function TutorSessionVerificationForm({
 }: TutorSessionVerificationFormProps) {
     const router = useRouter();
 
-    // Controlled Form State
+    // console.log("session", session);
+    const isBeginner =
+        session.student?.program === "beginner" || Boolean(session.newPosition);
+
     const [attendance, setAttendance] = useState<AttendanceStatus>(
         session.attendance || "present"
     );
@@ -42,11 +52,11 @@ export default function TutorSessionVerificationForm({
         session.tutorsComment || ""
     );
     const [newMemorization, setNewMemorization] = useState<
-        IMemorizationRange
-    >(session.newMemorization);
-    // const [revision, setRevision] = useState<IMemorizationRange | undefined>(
-    //     session.revision
-    // );
+        IMemorizationRange | any
+    >(session.newMemorization || "");
+    const [newPosition, setNewPosition] = useState<
+        INuruAlBayanRange | any
+    >(session.newPosition || "");
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -54,26 +64,52 @@ export default function TutorSessionVerificationForm({
 
     const formatQuranPosition = (pos?: MemorizationPosition) => {
         if (!pos || !pos.surah) return "Not logged";
-        return `${pos.surah} (Ayah ${pos.aayah || 1}${pos.page ? `, Page ${pos.page}` : ""
-            })`;
+        return `${pos.surah} (Ayah ${pos.aayah || 1}${pos.page ? `, Page ${pos.page}` : ""})`;
     };
 
-    const handleSaveVerifiedSession = async (
-        overrideAttendance?: AttendanceStatus
-    ) => {
+    const formatNurulBayanPosition = (pos?: NuruAlBayanPosition) => {
+        if (!pos || !pos.chapter) return "Not logged";
+        const details = [];
+        if (pos.section) details.push(`Section: ${pos.section}`);
+        if (pos.page) details.push(`Page ${pos.page}`);
+        return `${pos.chapter}${details.length ? ` (${details.join(", ")})` : ""}`;
+    };
+
+    const handleSaveVerifiedSession = async (overrideAttendance?: AttendanceStatus) => {
         setLoading(true);
         setError(null);
 
-        const res = await verifyAndCompleteSession({
+      let res; 
+        if (isBeginner) {
+            if (!newPosition) {
+                setLoading(false);
+                return setError("New position is required for Nuru Al-Bayan students.");
+            }
+
+          res = await updateAndVerifyBeginnerSession({
+            sessionId: session._id,
+            tutorId,
+           // attendance: overrideAttendance || attendance,
+            performance,
+            tutorsComment,
+            newPosition,
+        });
+
+        } else {
+            if (!newMemorization || typeof newMemorization !== "object" || !newMemorization.start) {
+                setLoading(false);
+                return setError("New memorization range is required for Quran students.");
+            }
+
+         res = await verifyAndCompleteSession({
             sessionId: session._id,
             tutorId,
             attendance: overrideAttendance || attendance,
             performance,
             tutorsComment,
             newMemorization,
-            // revision,
         });
-
+        }
 
         setLoading(false);
 
@@ -85,20 +121,22 @@ export default function TutorSessionVerificationForm({
         }
     };
 
-
     const studentName = session.student?.user?.name ?? "Student";
-    // console.log("session.student", session.student)
 
     return (
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 space-y-6">
             <div className="flex justify-between items-start border-b pb-4">
                 <div>
-                    <h2 className="text-xl font-bold text-gray-900">
-                        Verify Session Log
-                    </h2>
+                    <div className="flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-gray-900">Verify Session Log</h2>
+                        {isBeginner && (
+                            <span className="px-1 md:px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-800 rounded-full border border-blue-200">
+                                Nuru Al-Bayan
+                            </span>
+                        )}
+                    </div>
                     <p className="text-sm text-gray-500">
-                        Student:
-                        <span className="font-medium text-gray-800 capitalize ms-1">{studentName}</span>
+                        Student:<span className="font-medium text-gray-800 capitalize ms-1">{studentName}</span>
                     </p>
                 </div>
                 <span className="px-3 py-1 bg-amber-50 text-amber-700 text-xs font-semibold rounded-full border border-amber-200">
@@ -106,71 +144,49 @@ export default function TutorSessionVerificationForm({
                 </span>
             </div>
 
-            {error && (
-                <div className="p-3 text-sm text-red-700 bg-red-50 rounded-lg border border-red-200">
-                    {error}
-                </div>
-            )}
+            {error && <div className="p-3 text-sm text-red-700 bg-red-50 rounded-lg border border-red-200">{error}</div>}
 
-            {/* Student Logged Data Summary */}
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 space-y-3">
                 <div className="flex justify-between items-center">
                     <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                        Student Logged Progress
+                        {isBeginner ? "Nuru Al-Bayan Progress" : "Student Logged Progress"}
                     </span>
-                    <button
-                        type="button"
-                        onClick={() => setIsEditModalOpen(true)}
-                        className="text-xs text-emerald-600 font-medium hover:underline"
-                    >
-                        ✏️ Edit Ranges or Details
+                    <button type="button" onClick={() => setIsEditModalOpen(true)} className="text-xs text-emerald-600 font-medium hover:underline">
+                        Edit Details
                     </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <span className="block text-xs text-gray-500">
-                            New Memorization:
-                        </span>
-                        <span className="font-medium text-gray-800">
-                            {formatQuranPosition(newMemorization?.start)} ➔{" "}
-                            {formatQuranPosition(newMemorization?.end)}
-                        </span>
-                    </div>
-                    {/* <div>
-                        <span className="block text-xs text-gray-500">Revision:</span>
-                        <span className="font-medium text-gray-800">
-                            {formatQuranPosition(revision?.start)} ➔{" "}
-                            {formatQuranPosition(revision?.end)}
-                        </span>
-                    </div> */}
+                    {isBeginner ? (
+                        <div>
+                            <span className="block text-xs text-gray-500">Nuru Al-Bayan Position:</span>
+                            <span className="font-medium text-gray-800">
+                                {typeof newPosition === "object" && newPosition?.start ? formatNurulBayanPosition(newPosition.start) : "Not logged"}
+                                {" ➔ "}
+                                {typeof newPosition === "object" && newPosition?.end ? formatNurulBayanPosition(newPosition.end) : "Not logged"}
+                            </span>
+                        </div>
+                    ) : (
+                        <div>
+                            <span className="block text-xs text-gray-500">New Memorization:</span>
+                            <span className="font-medium text-gray-800">
+                                {typeof newMemorization === "object" && newMemorization?.start ? formatQuranPosition(newMemorization.start) : "Not logged"}
+                                {" ➔ "}
+                                {typeof newMemorization === "object" && newMemorization?.end ? formatQuranPosition(newMemorization.end) : "Not logged"}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Tutor Rating & Attendance Inputs */}
+            {/* ... your attendance / performance inputs stay same ... */}
             <div className="space-y-4">
                 <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Attendance Status
-                    </label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Attendance Status</label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {(
-                            [
-                                "present",
-                                "partial",
-                                "absent",
-                                "cancelled",
-                            ] as AttendanceStatus[]
-                        ).map((status) => (
-                            <button
-                                key={status}
-                                type="button"
-                                onClick={() => setAttendance(status)}
-                                className={`py-2 text-xs font-medium rounded-lg border transition ${attendance === status
-                                    ? "bg-emerald-50 border-emerald-500 text-emerald-700 font-semibold"
-                                    : "border-gray-200 text-gray-600 hover:bg-gray-50"
-                                    }`}
-                            >
+                        {(["present","partial","absent","cancelled"] as AttendanceStatus[]).map((status) => (
+                            <button key={status} type="button" onClick={() => setAttendance(status)}
+                                className={`py-2 text-xs font-medium rounded-lg border transition ${attendance === status ? "bg-emerald-50 border-emerald-500 text-emerald-700 font-semibold" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
                                 {status.toUpperCase()}
                             </button>
                         ))}
@@ -178,29 +194,11 @@ export default function TutorSessionVerificationForm({
                 </div>
 
                 <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Performance Rating *
-                    </label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Performance Rating *</label>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                        {(
-                            [
-                                { label: "🌟 Excellent", val: "excellent" },
-                                { label: "👍 Good", val: "good" },
-                                { label: "👌 Fair", val: "fair" },
-                                { label: "⚠️ Needs Work", val: "needs_work" },
-                            ] as const
-                        ).map((item) => (
-                            <button
-                                key={item.val}
-                                type="button"
-                                onClick={() =>
-                                    setPerformance(item.val as PerformanceRating)
-                                }
-                                className={`py-2 text-xs font-medium rounded-lg border transition ${performance === item.val
-                                    ? "bg-emerald-600 text-white border-emerald-600"
-                                    : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                                    }`}
-                            >
+                        {([{ label: "🌟 Excellent", val: "excellent" },{ label: "👍 Good", val: "good" },{ label: "👌 Fair", val: "fair" },{ label: "⚠️ Needs Work", val: "needs_work" },] as const).map((item) => (
+                            <button key={item.val} type="button" onClick={() => setPerformance(item.val as PerformanceRating)}
+                                className={`py-2 text-xs font-medium rounded-lg border transition ${performance === item.val ? "bg-emerald-600 text-white border-emerald-600" : "border-gray-200 text-gray-700 hover:bg-gray-50"}`}>
                                 {item.label}
                             </button>
                         ))}
@@ -208,47 +206,43 @@ export default function TutorSessionVerificationForm({
                 </div>
 
                 <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Tutor Feedback / Comment (Optional)
-                    </label>
-                    <textarea
-                        rows={3}
-                        value={tutorsComment}
-                        onChange={(e) => setTutorsComment(e.target.value)}
-                        placeholder="E.g., Great Tajweed today, work on makhraj for verse 12..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm outline-none"
-                    />
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Tutor Feedback / Comment (Optional)</label>
+                    <textarea rows={3} value={tutorsComment} onChange={(e) => setTutorsComment(e.target.value)}
+                        placeholder={isBeginner ? "E.g., Good progress on Sukoon and Tanween rules..." : "E.g., Great Tajweed today, work on makhraj for verse 12..."}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm outline-none"/>
                 </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex flex-col md:flex-row gap-3 pt-2">
-                <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleSaveVerifiedSession()}
-                    className="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg shadow-sm transition disabled:opacity-50"
-                >
+                <button type="button" disabled={loading} onClick={() => handleSaveVerifiedSession()}
+                    className="flex-1 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg shadow-sm transition disabled:opacity-50">
                     {loading ? "Saving..." : "✅ Approve & Verify Session"}
                 </button>
             </div>
 
-            {/* Edit Session Modal */}
-            <Modal
-                isOpen={isEditModalOpen}
-                onClose={() => setIsEditModalOpen(false)}
-                title="Edit Session Log"
-            >
-                <EditSessionModalContent
-                    initialNewMem={newMemorization}
-                    // initialRev={revision}
-                    onSave={(updatedNewMem, updatedRev) => {
-                        setNewMemorization(updatedNewMem);
-                        // setRevision(updatedRev);
-                        setIsEditModalOpen(false);
-                    }}
-                    onClose={() => setIsEditModalOpen(false)}
-                />
+            {/* Edit Modal - THIS IS THE FIX */}
+            <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title="Edit Session Log">
+                {isBeginner ? (
+                    <EditBeginnerSessionModalContent
+                        initialNewPosition={newPosition}
+                        onClose={() => setIsEditModalOpen(false)}
+                        onSave={(updatedRange) => {
+                            setNewPosition(updatedRange);
+                            setIsEditModalOpen(false);
+                        }}
+                    />
+                ) : (
+                    <EditSessionModalContent
+                        initialNewMem={newMemorization}
+                        initialNewPosition={newPosition}
+                        isBeginner={false}
+                        onSave={(updatedNewMem) => {
+                            setNewMemorization(updatedNewMem);
+                            setIsEditModalOpen(false);
+                        }}
+                        onClose={() => setIsEditModalOpen(false)}
+                    />
+                )}
             </Modal>
         </div>
     );

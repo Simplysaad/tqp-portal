@@ -1,18 +1,11 @@
 import mongoose, { Schema, Document, Model, model, Types } from "mongoose";
 import { IUser } from "./user.model";
 import { MemorizationPosition } from "@/lib/quran";
+import { NuruAlBayanPosition } from "@/app/onboarding/BeginnerOnboarding";
 
 // Enums / Union Types
 export type Gender = "male" | "female";
 export type StudentStatus = "active" | "at risk" | "inactive";
-
-// Sub-document Interface
-// export interface IMemorization {
-//     surah?: string;
-//     aayah?: number;
-//     juz?: number;
-//     page?: number;
-// }
 
 // Base Student Interface
 export interface IStudent {
@@ -22,7 +15,10 @@ export interface IStudent {
     faculty?: string;
     department?: string;
     level?: number;
+    preferredTime?: "morning" | "afternoon" | "night";
     currentMemorization?: MemorizationPosition;
+    currentPosition: NuruAlBayanPosition
+    program: "beginner" | string
     status: StudentStatus;
     tutor: Types.ObjectId;
     createdAt?: Date;
@@ -65,6 +61,15 @@ const studentSchema = new Schema<IStudentDocument, IStudentModel>(
             type: String,
             trim: true,
         },
+        program: {
+            type: String,
+            default: "normal"
+        },
+        preferredTime: {
+            type: String,
+            enum: ["morning", "afternoon", "night"],
+            default: "night",
+        },
         level: {
             type: Number,
             min: [100, "Level cannot be below 100"],
@@ -74,6 +79,12 @@ const studentSchema = new Schema<IStudentDocument, IStudentModel>(
             aayah: { type: Number, min: 1 },
             juz: { type: Number, min: 1, max: 30 },
             page: { type: Number, min: 1, max: 604 },
+        },
+        currentPosition: {
+            index: { type: Number },
+            section: { type: String },
+            chapter: { type: String },
+            page: { type: Number },
         },
         status: {
             type: String,
