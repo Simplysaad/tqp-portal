@@ -331,6 +331,8 @@ const DAYS_ORDER: DayOfWeek[] = [
     "saturday"
 ];
 
+
+
 export async function getNearestSchedule(): Promise<
     | { success: true; data: IScheduleDocument }
     | { success: false; error: string }
@@ -451,6 +453,10 @@ export async function getNearestSchedule(): Promise<
 
     return { success: true, data: JSON.parse(JSON.stringify(nearestSchedule)) };
 }
+
+
+
+    
 
 export async function activateNearestSchedule() {
     const result = await getNearestSchedule();
