@@ -1,5 +1,5 @@
-// "use client";
-// import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+"use client";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 // export function FacultyBar({ data }: { data: { _id: string, count: number }[] }) {
 //   const formatted = data.map(d => ({ name: d._id || "Unknown", count: d.count }));
