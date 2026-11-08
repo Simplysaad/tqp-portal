@@ -6,160 +6,193 @@ import LogProgressForm from "./StudentLogForm";
 import TutorSessionVerificationForm from "./TutorSessionVerificationForm";
 import { generateOSFAMetadata } from "@/lib/metadata";
 import BeginnerLogProgressForm from "./BeginnerLogForm";
+import { headers } from "next/headers";
+import { checkIsCrawler } from "@/lib/crawler";
 
 interface SessionPageProps {
-    params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>;
 }
-
 
 export async function generateMetadata({ params }: SessionPageProps) {
-    const { id } = await params;
+  const { id } = await params;
 
-    return generateOSFAMetadata({
-        path: `/dashboard/sessions/${id}`,
-        title: "Session Overview & Records | TQP System",
-        description: "View session logs, memorisation targets, and group notes for this specific class session.",
-    })
+  return generateOSFAMetadata({
+    path: `/dashboard/sessions/${id}`,
+    title: "Session Overview & Records | TQP System",
+    description:
+      "View session logs, memorisation targets, and group notes for this specific class session.",
+  });
 }
 
-
 export default async function SessionDetailPage({ params }: SessionPageProps) {
-    // 1. Authenticate user session
+  // 1. Authenticate user session
 
-    const { id: sessionId } = await params
-    const currentUser = await getSession();
-    if (!currentUser) {
-        redirect(`/login?next=/dashboard/sessions/${sessionId}`);
-    }
+  const { id: sessionId } = await params;
+  const currentUser = await getSession();
 
-    // 2. Connect DB and fetch session document
-    await connectDB();
-    const sessionDoc = await Session.findById(sessionId)
-        .populate({
-            path: "student",
-            select: "_id user program",
-            populate: { path: "user", select: "name _id" }
-        })
-        .populate({
-            path: "tutor",
-            select: "_id user",
-            populate: { path: "user", select: "name _id" }
-        })
-        .lean();
+  const headersList = await headers();
+  const isCrawler = checkIsCrawler(headersList);
 
-    // If session doesn't exist, route back to dashboard
-    if (!sessionDoc) {
-        redirect("/dashboard");
-    }
+  if (isCrawler) {
+    return `NextResponse.json(
+      { message: "Crawler detected. Access to the dashboard is restricted." },
+      { status: 403 },
+    ); `;
+  }
 
-    // Convert Mongoose document to plain JS object for Client Components
-    const session = JSON.parse(JSON.stringify(sessionDoc));
+  if (!currentUser) {
+    redirect(`/login?next=/dashboard/sessions/${sessionId}`);
+  }
 
-    const userId = currentUser.id;
+  // 2. Connect DB and fetch session document
+  await connectDB();
+  const sessionDoc = await Session.findById(sessionId)
+    .populate({
+      path: "student",
+      select: "_id user program",
+      populate: { path: "user", select: "name _id" },
+    })
+    .populate({
+      path: "tutor",
+      select: "_id user",
+      populate: { path: "user", select: "name _id" },
+    })
+    .lean();
 
-    const userRole = currentUser.role;
-    // 3. Authorization Check (Permission Guard)
-    const isAssignedStudent = userRole === "student" && session.student?.user?._id.toString() === userId;
-    const isAssignedTutor = userRole === "tutor" && session.tutor?.user?._id.toString() === userId;
-    const isBeginner = session.student?.program === "beginner" //currentUser.program === "beginner";
+  // If session doesn't exist, route back to dashboard
+  if (!sessionDoc) {
+    redirect("/dashboard");
+  }
 
-    console.log("session.student?.program", session.student)
+  // Convert Mongoose document to plain JS object for Client Components
+  const session = JSON.parse(JSON.stringify(sessionDoc));
 
-    const studentName = session.student?.user?.name ?? "Student";
-    const tutorName = session.tutor?.user?.name ?? "Tutor";
-    // console.log("session.student", session.student)
+  const userId = currentUser.id;
 
-    const studentId = isAssignedStudent && session.student?._id
-    const tutorId = isAssignedTutor && session.tutor?._id
+  const userRole = currentUser.role;
+  // 3. Authorization Check (Permission Guard)
+  const isAssignedStudent =
+    userRole === "student" && session.student?.user?._id.toString() === userId;
+  const isAssignedTutor =
+    userRole === "tutor" && session.tutor?.user?._id.toString() === userId;
+  const isBeginner = session.student?.program === "beginner"; //currentUser.program === "beginner";
 
+  console.log("session.student?.program", session.student);
 
-    // // console.log("session", session)
-    // // console.log("userId", userId)
-    // // console.log("isAssignedStudent", isAssignedStudent)
-    // // console.log("isAssignedTutor", isAssignedTutor)
+  const studentName = session.student?.user?.name ?? "Student";
+  const tutorName = session.tutor?.user?.name ?? "Tutor";
+  // console.log("session.student", session.student)
 
+  const studentId = isAssignedStudent && session.student?._id;
+  const tutorId = isAssignedTutor && session.tutor?._id;
 
-    if (!isAssignedStudent && !isAssignedTutor) {
-        // Redirect unauthorized users (e.g. students viewing other students' sessions)
-        redirect("/dashboard");
-    }
+  // // console.log("session", session)
+  // // console.log("userId", userId)
+  // // console.log("isAssignedStudent", isAssignedStudent)
+  // // console.log("isAssignedTutor", isAssignedTutor)
 
-    // Helpers for displaying formatting ranges
-    const formatRange = (range?: { start?: { surah?: string; aayah?: number }; end?: { surah?: string; aayah?: number } }) => {
-        if (!range?.start?.surah) return "Not logged";
-        return `${range.start.surah} (${range.start.aayah || 1}) ➔ ${range.end?.surah || range.start.surah} (${range.end?.aayah || "End"})`;
-    };
+  if (!isAssignedStudent && !isAssignedTutor) {
+    // Redirect unauthorized users (e.g. students viewing other students' sessions)
+    redirect("/dashboard");
+  }
 
-    return (
-        <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
-            {/* Session Metadata Card */}
-            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
-                <div className="flex justify-between items-center border-b pb-3">
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-900">Session Details</h1>
-                        <p className="text-xs text-gray-400">
-                            {new Date(session.date).toLocaleDateString("en-GB", {
-                                weekday: "long",
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                            })}
-                        </p>
-                    </div>
-                    <span
-                        className={`px-3 py-1 text-xs font-semibold rounded-full border capitalize ${session.attendance === "present"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : session.attendance === "absent"
-                                ? "bg-red-50 text-red-700 border-red-200"
-                                : "bg-amber-50 text-amber-700 border-amber-200"
-                            }`}
-                    >
-                        {session.attendance}
-                    </span>
-                </div>
+  // Helpers for displaying formatting ranges
+  const formatRange = (range?: {
+    start?: { surah?: string; aayah?: number };
+    end?: { surah?: string; aayah?: number };
+  }) => {
+    if (!range?.start?.surah) return "Not logged";
+    return `${range.start.surah} (${range.start.aayah || 1}) ➔ ${range.end?.surah || range.start.surah} (${range.end?.aayah || "End"})`;
+  };
 
-                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                    <div>
-                        <span className="block text-xs text-gray-400">Student</span>
-                        <span className="font-medium text-gray-800 capitalize">{studentName}</span>
-                    </div>
-                    <div>
-                        <span className="block text-xs text-gray-400">Tutor</span>
-                        <span className="font-medium text-gray-800">{tutorName}</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* 4. Role-Based Form Rendering */}
-            {isAssignedTutor && (
-                <TutorSessionVerificationForm session={session} tutorId={tutorId} />
-            )}
-
-            {isAssignedStudent && (
-                <>
-                    {/* If the student hasn't logged memorization yet, show the submission form */}
-                    {isBeginner ? (<BeginnerLogProgressForm sessionId={session._id} studentId={studentId} />) : !session.newMemorization?.start?.surah ? (
-                        <LogProgressForm sessionId={session._id} studentId={studentId} />
-                    ) : (
-                        /* If already logged, show read-only status */
-                        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
-                            <h3 className="text-base font-semibold text-gray-900">Submitted Progress</h3>
-                            <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-sm space-y-2">
-                                <div>
-                                    <span className="text-xs text-gray-500 block">Logged Range:</span>
-                                    <span className="font-medium text-gray-800">{formatRange(session.newMemorization)}</span>
-                                </div>
-                                {session.tutorsComment && (
-                                    <div className="pt-2 border-t border-gray-200">
-                                        <span className="text-xs text-gray-500 block">Tutor Feedback:</span>
-                                        <p className="text-gray-700 italic">"{session.tutorsComment}"</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </>
-            )}
+  return (
+    <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+      {/* Session Metadata Card */}
+      <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
+        <div className="flex justify-between items-center border-b pb-3">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Session Details</h1>
+            <p className="text-xs text-gray-400">
+              {new Date(session.date).toLocaleDateString("en-GB", {
+                weekday: "long",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}
+            </p>
+          </div>
+          <span
+            className={`px-3 py-1 text-xs font-semibold rounded-full border capitalize ${
+              session.attendance === "present"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : session.attendance === "absent"
+                  ? "bg-red-50 text-red-700 border-red-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+            }`}
+          >
+            {session.attendance}
+          </span>
         </div>
-    );
+
+        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+          <div>
+            <span className="block text-xs text-gray-400">Student</span>
+            <span className="font-medium text-gray-800 capitalize">
+              {studentName}
+            </span>
+          </div>
+          <div>
+            <span className="block text-xs text-gray-400">Tutor</span>
+            <span className="font-medium text-gray-800">{tutorName}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 4. Role-Based Form Rendering */}
+      {isAssignedTutor && (
+        <TutorSessionVerificationForm session={session} tutorId={tutorId} />
+      )}
+
+      {isAssignedStudent && (
+        <>
+          {/* If the student hasn't logged memorization yet, show the submission form */}
+          {isBeginner ? (
+            <BeginnerLogProgressForm
+              sessionId={session._id}
+              studentId={studentId}
+            />
+          ) : !session.newMemorization?.start?.surah ? (
+            <LogProgressForm sessionId={session._id} studentId={studentId} />
+          ) : (
+            /* If already logged, show read-only status */
+            <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm space-y-4">
+              <h3 className="text-base font-semibold text-gray-900">
+                Submitted Progress
+              </h3>
+              <div className="p-4 bg-gray-50 rounded-lg border border-gray-100 text-sm space-y-2">
+                <div>
+                  <span className="text-xs text-gray-500 block">
+                    Logged Range:
+                  </span>
+                  <span className="font-medium text-gray-800">
+                    {formatRange(session.newMemorization)}
+                  </span>
+                </div>
+                {session.tutorsComment && (
+                  <div className="pt-2 border-t border-gray-200">
+                    <span className="text-xs text-gray-500 block">
+                      Tutor Feedback:
+                    </span>
+                    <p className="text-gray-700 italic">
+                      "{session.tutorsComment}"
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 }

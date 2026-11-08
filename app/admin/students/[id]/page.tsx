@@ -96,7 +96,7 @@ export default async function StudentDetailPage({
     };
 
     return (
-        <div className="p-6 max-w-5xl mx-auto space-y-6">
+        <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
             <Link
                 href="/admin/students"
                 className="inline-flex items-center gap-2 text-xs text-zinc-500 hover:text-zinc-900"
@@ -105,16 +105,16 @@ export default async function StudentDetailPage({
             </Link>
 
             {/* Header */}
-            <div className="bg-white p-6 rounded-xl border shadow-sm flex justify-between items-start">
-                <div className="flex gap-4">
-                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-full">
+            <div className="bg-white p-5 sm:p-6 rounded-xl border shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="flex items-start sm:items-center gap-4">
+                    <div className="p-3 bg-emerald-50 text-emerald-600 rounded-full shrink-0">
                         <User className="w-8 h-8" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold">
+                        <h1 className="text-xl sm:text-2xl font-bold break-words">
                             {(student.user as any)?.name}
                         </h1>
-                        <p className="text-sm text-zinc-500">
+                        <p className="text-xs sm:text-sm text-zinc-500 break-all">
                             {(student.user as any)?.email} •{" "}
                             {student.matricNumber || "No Matric"} •{" "}
                             {(student.user as any)?.whatsappNumber}
@@ -127,21 +127,21 @@ export default async function StudentDetailPage({
                     </div>
                 </div>
                 <span
-                    className={`text-xs px-3 py-1 rounded-full font-semibold capitalize ${student.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
+                    className={`text-xs px-3 py-1 rounded-full font-semibold capitalize shrink-0 ${student.status === "active" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
                 >
                     {student.status}
                 </span>
             </div>
 
             {/* Progress Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 {isBeginner ? (
                     <>
                         <div className="p-4 border rounded-xl bg-white shadow-sm">
                             <h3 className="text-xs text-gray-400 uppercase">
                                 Current Chapter
                             </h3>
-                            <p className="text-lg font-bold">
+                            <p className="text-base sm:text-lg font-bold truncate">
                                 {student.currentPosition?.chapter || "Not set"}
                             </p>
                             <p className="text-xs text-gray-500">
@@ -152,7 +152,7 @@ export default async function StudentDetailPage({
                             <h3 className="text-xs text-gray-400 uppercase">
                                 Section
                             </h3>
-                            <p className="text-lg font-bold">
+                            <p className="text-base sm:text-lg font-bold truncate">
                                 {student.currentPosition?.section || "Not set"}
                             </p>
                             <p className="text-xs text-gray-500">
@@ -166,7 +166,7 @@ export default async function StudentDetailPage({
                             <h3 className="text-xs text-gray-400 uppercase">
                                 Current Surah
                             </h3>
-                            <p className="text-lg font-bold">
+                            <p className="text-base sm:text-lg font-bold truncate">
                                 {student.currentMemorization?.surah ||
                                     "Not set"}
                             </p>
@@ -178,7 +178,7 @@ export default async function StudentDetailPage({
                             <h3 className="text-xs text-gray-400 uppercase">
                                 Current Juz
                             </h3>
-                            <p className="text-lg font-bold">
+                            <p className="text-base sm:text-lg font-bold truncate">
                                 {student.currentMemorization?.juz
                                     ? `Juz ${student.currentMemorization.juz}`
                                     : "Not set"}
@@ -190,7 +190,7 @@ export default async function StudentDetailPage({
                     <h3 className="text-xs text-gray-400 uppercase">
                         Current Page
                     </h3>
-                    <p className="text-lg font-bold">
+                    <p className="text-base sm:text-lg font-bold truncate">
                         {isBeginner
                             ? student.currentPosition?.page
                             : student.currentMemorization?.page
@@ -202,7 +202,7 @@ export default async function StudentDetailPage({
                     <h3 className="text-xs text-gray-400 uppercase">
                         Attendance
                     </h3>
-                    <p className="text-lg font-bold text-emerald-600">
+                    <p className="text-base sm:text-lg font-bold text-emerald-600">
                         {attendanceRate}%
                     </p>
                     <p className="text-xs text-gray-500">
@@ -224,17 +224,19 @@ export default async function StudentDetailPage({
                     goals.map((goal: any) => (
                         <div
                             key={goal._id.toString()}
-                            className="p-5 border rounded-xl bg-white shadow-sm space-y-3"
+                            className="p-4 sm:p-5 border rounded-xl bg-white shadow-sm space-y-3"
                         >
-                            <div className="flex justify-between">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                                 <div>
                                     <span className="text-xs font-semibold uppercase text-emerald-600">
-                                        {goal.semester} • {goal.type} •{" "}
+                                        {goal.semester} {goal.type} •{" "}
                                         {goal.status}
                                     </span>
-                                    <h3 className="font-bold">{goal.title}</h3>
+                                    <h3 className="font-bold text-base sm:text-lg">
+                                        {goal.title}
+                                    </h3>
                                 </div>
-                                <span className="text-sm font-bold text-emerald-700">
+                                <span className="text-xs sm:text-sm font-bold text-emerald-700 shrink-0">
                                     {goal.progressPercentage}% Completed
                                 </span>
                             </div>
@@ -246,7 +248,7 @@ export default async function StudentDetailPage({
                                     }}
                                 />
                             </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-zinc-500">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-zinc-500 pt-1">
                                 {goal.type === "nuru_al_bayan" ? (
                                     <>
                                         <span>
@@ -301,7 +303,7 @@ export default async function StudentDetailPage({
                                     </>
                                 )}
                             </div>
-                            <div className="text-xs text-zinc-400">
+                            <div className="text-xs text-zinc-400 pt-1 border-t">
                                 Target Date:{" "}
                                 {new Date(goal.targetDate).toLocaleDateString()}{" "}
                                 • Created:{" "}
@@ -312,16 +314,16 @@ export default async function StudentDetailPage({
                 )}
             </div>
 
-            {/* Latest Feedback - FIXED */}
+            {/* Latest Feedback */}
             {latestEvaluated && (
-                <div className="p-4 border rounded-xl bg-slate-50 space-y-1">
-                    <div className="flex justify-between">
+                <div className="p-4 border rounded-xl bg-slate-50 space-y-2">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                         <h3 className="text-xs font-semibold uppercase text-slate-500 flex items-center gap-2">
                             <MessageSquare className="w-4 h-4" /> Latest
                             Feedback
                         </h3>
                         <span
-                            className={`text-xs px-2 py-0.5 rounded border ${latestEvaluated.performance ? ratingColors[latestEvaluated.performance as string] : "bg-zinc-100 text-zinc-500"}`}
+                            className={`text-xs px-2.5 py-0.5 rounded border self-start sm:self-auto ${latestEvaluated.performance ? ratingColors[latestEvaluated.performance as string] : "bg-zinc-100 text-zinc-500"}`}
                         >
                             {latestEvaluated.performance || "no rating"}
                         </span>
@@ -336,9 +338,9 @@ export default async function StudentDetailPage({
                 </div>
             )}
 
-            {/* ALL SESSIONS - FIXED */}
-            <div className="bg-white border rounded-xl shadow-sm p-5 space-y-4">
-                <div className="flex justify-between border-b pb-3">
+            {/* ALL SESSIONS */}
+            <div className="bg-white border rounded-xl shadow-sm p-4 sm:p-5 space-y-4">
+                <div className="flex justify-between border-b pb-3 items-center">
                     <h2 className="font-bold flex items-center gap-2">
                         <Calendar className="w-4 h-4" /> All Sessions (
                         {sessions.length})
@@ -355,19 +357,21 @@ export default async function StudentDetailPage({
                         {sessions.map((sess: any) => (
                             <div
                                 key={sess._id.toString()}
-                                className="py-4 space-y-2"
+                                className="py-4 space-y-3"
                             >
-                                <div className="flex justify-between items-start gap-4">
-                                    <div className="space-y-1 flex-1">
-                                        <p className="font-semibold flex items-center gap-2">
-                                            {new Date(
-                                                sess.date
-                                            ).toLocaleDateString("en-GB", {
-                                                weekday: "short",
-                                                day: "numeric",
-                                                month: "short",
-                                                year: "numeric"
-                                            })}
+                                <div className="flex flex-col sm:flex-row justify-between items-start gap-3">
+                                    <div className="space-y-1.5 flex-1 w-full">
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                                            <p className="font-semibold text-sm sm:text-base">
+                                                {new Date(
+                                                    sess.date
+                                                ).toLocaleDateString("en-GB", {
+                                                    weekday: "short",
+                                                    day: "numeric",
+                                                    month: "short",
+                                                    year: "numeric"
+                                                })}
+                                            </p>
                                             <span className="text-xs font-normal text-zinc-500 flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />{" "}
                                                 {Math.floor(
@@ -382,14 +386,13 @@ export default async function StudentDetailPage({
                                                 {String(
                                                     sess.endTime % 60
                                                 ).padStart(2, "0")}
-                                            </span>
-                                            <span className="text-xs font-normal text-zinc-500">
-                                                {
+                                                ({
                                                     (sess.schedule as any)
                                                         ?.dayOfWeek
-                                                }
+                                                })
                                             </span>
-                                        </p>
+                                        </div>
+
                                         {sess.newMemorization?.start && (
                                             <div className="text-xs bg-emerald-50 border border-emerald-100 p-2 rounded">
                                                 <b>New Hifz:</b>{" "}
@@ -403,7 +406,10 @@ export default async function StudentDetailPage({
                                                         .aayah
                                                 }{" "}
                                                 (Juz{" "}
-                                                {sess.newMemorization.start.juz}
+                                                {
+                                                    sess.newMemorization.start
+                                                        .juz
+                                                }
                                                 , p
                                                 {
                                                     sess.newMemorization.start
@@ -446,7 +452,7 @@ export default async function StudentDetailPage({
                                             </div>
                                         )}
 
-                                        <div className="flex gap-3 text-xs text-zinc-500 flex-wrap">
+                                        <div className="flex gap-2 sm:gap-3 text-xs text-zinc-500 flex-wrap pt-1">
                                             <span>
                                                 Tutor:{" "}
                                                 {
@@ -482,26 +488,28 @@ export default async function StudentDetailPage({
                                             </p>
                                         )}
                                     </div>
-                                    <div className="flex flex-col items-end gap-1 shrink-0">
-                                        <span
-                                            className={`text-xs px-2 py-0.5 rounded capitalize ${sess.attendance === "present" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}
-                                        >
-                                            {sess.attendance}
-                                        </span>
-
-                                        {sess.performance && (
+                                    <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between w-full sm:w-auto gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-zinc-100">
+                                        <div className="flex items-center gap-1.5">
                                             <span
-                                                className={`text-xs px-2 py-0.5 rounded border capitalize ${ratingColors[sess.performance as string] || ""}`}
+                                                className={`text-xs px-2 py-0.5 rounded capitalize ${sess.attendance === "present" ? "bg-emerald-100 text-emerald-800" : "bg-rose-100 text-rose-800"}`}
                                             >
-                                                {sess.performance.replace(
-                                                    "_",
-                                                    " "
-                                                )}
+                                                {sess.attendance}
                                             </span>
-                                        )}
+
+                                            {sess.performance && (
+                                                <span
+                                                    className={`text-xs px-2 py-0.5 rounded border capitalize ${ratingColors[sess.performance as string] || ""}`}
+                                                >
+                                                    {sess.performance.replace(
+                                                        "_",
+                                                        " "
+                                                    )}
+                                                </span>
+                                            )}
+                                        </div>
                                         <Link
                                             href={`/dashboard/sessions/${sess._id}`}
-                                            className="text-xs text-emerald-600 hover:underline"
+                                            className="text-xs text-emerald-600 hover:underline shrink-0"
                                         >
                                             View →
                                         </Link>
@@ -514,15 +522,17 @@ export default async function StudentDetailPage({
             </div>
 
             {/* Group */}
-            <div className="bg-white p-6 rounded-xl border shadow-sm">
+            <div className="bg-white p-4 sm:p-6 rounded-xl border shadow-sm">
                 <div className="flex items-center gap-2 border-b pb-3">
                     <ShieldCheck className="w-5 h-5 text-indigo-600" />
                     <h2 className="font-semibold">Tutor Group</h2>
                 </div>
                 {assignedGroup ? (
-                    <div className="flex justify-between bg-indigo-50 border border-indigo-100 p-4 rounded-lg mt-3">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-indigo-50 border border-indigo-100 p-4 rounded-lg mt-3">
                         <div>
-                            <p className="font-bold">{assignedGroup.title}</p>
+                            <p className="font-bold text-sm sm:text-base">
+                                {assignedGroup.title}
+                            </p>
                             <p className="text-xs text-zinc-500">
                                 Tutor:{" "}
                                 {(assignedGroup.tutor as any)?.user?.name}
@@ -530,13 +540,13 @@ export default async function StudentDetailPage({
                         </div>
                         <Link
                             href={`/admin/groups/${assignedGroup._id}`}
-                            className="text-xs font-semibold text-indigo-700"
+                            className="text-xs font-semibold text-indigo-700 shrink-0"
                         >
-                            View →
+                            View Group →
                         </Link>
                     </div>
                 ) : (
-                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm mt-3">
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm mt-3 text-amber-800">
                         Unassigned
                     </div>
                 )}

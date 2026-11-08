@@ -4,48 +4,67 @@ import Student from "@/models/student.model";
 import { joinSessionViaLink } from "@/actions/session.action";
 import connectDB from "@/lib/db";
 import { generateOSFAMetadata } from "@/lib/metadata";
+import { headers } from "next/headers";
+import { checkIsCrawler } from "@/lib/crawler";
 
 interface JoinPageProps {
-    params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>;
 }
 
 export async function generateMetadata({ params }: JoinPageProps) {
-    const { id } = await params;
+  const { id } = await params;
 
-    return generateOSFAMetadata({
-        path: `/join/${id}`,
-        title: "Join Group Invitation | TQP System",
-        description: "Accept your invitation link to join your assigned TQP study circle.",
-    })
+  return generateOSFAMetadata({
+    path: `/join/${id}`,
+    title: "Join Group Invitation | TQP System",
+    description:
+      "Accept your invitation link to join your assigned TQP study circle.",
+  });
 }
 
 export default async function JoinPage({ params }: JoinPageProps) {
-    const { id: tutorGroupId } = await params;
+  const { id: tutorGroupId } = await params;
 
-    // 1. Auth check
-    const currentUser = await getSession();
-    if (!currentUser || currentUser.role !== "student") {
-        redirect(`/login?next=/join/${tutorGroupId}`);
-    }
+  // 1. Auth check
+  const currentUser = await getSession();
 
-    await connectDB();
+  const headersList = await headers();
+  const isCrawler = checkIsCrawler(headersList);
 
-    // 2. Fetch Student by linked user ID (currentUser.id or currentUser._id)
-    const userId = currentUser.id || currentUser._id;
-    const student = await Student.findOne({ user: userId });
+  if (isCrawler) {
+    return `NextResponse.json(
+      { message: "Crawler detected. Access to the dashboard is restricted." },
+      { status: 403 },
+    ); `;
+  }
 
-    if (!student) {
-        redirect("/dashboard?error=" + encodeURIComponent("Student profile not found."));
-    }
+  if (!currentUser || currentUser.role !== "student") {
+    redirect(`/login?next=/join/${tutorGroupId}`);
+  }
 
-    // 3. Join session action
-    const response = await joinSessionViaLink(tutorGroupId, student._id.toString());
+  await connectDB();
 
-    if (!response.success || !response.redirectUrl) {
-        const errorMsg = response.error || "Unable to join live class.";
-        redirect("/dashboard?error=" + encodeURIComponent(errorMsg));
-    }
+  // 2. Fetch Student by linked user ID (currentUser.id or currentUser._id)
+  const userId = currentUser.id || currentUser._id;
+  const student = await Student.findOne({ user: userId });
 
-    // 4. Redirect student to Google Meet link
-    redirect(response.redirectUrl);
+  if (!student) {
+    redirect(
+      "/dashboard?error=" + encodeURIComponent("Student profile not found."),
+    );
+  }
+
+  // 3. Join session action
+  const response = await joinSessionViaLink(
+    tutorGroupId,
+    student._id.toString(),
+  );
+
+  if (!response.success || !response.redirectUrl) {
+    const errorMsg = response.error || "Unable to join live class.";
+    redirect("/dashboard?error=" + encodeURIComponent(errorMsg));
+  }
+
+  // 4. Redirect student to Google Meet link
+  redirect(response.redirectUrl);
 }

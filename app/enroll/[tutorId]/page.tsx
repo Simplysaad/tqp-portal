@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation';
 
 
 import { generateOSFAMetadata } from "@/lib/metadata";
+import { headers } from 'next/headers';
+import { checkIsCrawler } from '@/lib/crawler';
 
 export async function generateMetadata({ params }: { params: { tutorId: string } }) {
 
@@ -26,6 +28,17 @@ interface EnrollProps {
 
 export default async function EnrollDirect({ params }: EnrollProps) {
     const currentUser = await getSession();
+
+      const headersList = await headers();
+      const isCrawler = checkIsCrawler(headersList);
+    
+      if (isCrawler) {
+        return `NextResponse.json(
+          { message: "Crawler detected. Access to the dashboard is restricted." },
+          { status: 403 },
+        ); `;
+      }
+
     const { tutorId } = await params;
 
     if (!currentUser) {

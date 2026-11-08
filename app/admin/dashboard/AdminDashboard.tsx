@@ -6,7 +6,6 @@ import {
   UserCheck,
   ShieldAlert,
   Layers,
-  ArrowUpRight,
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
@@ -17,12 +16,11 @@ import { FacultyBar } from "@/components/analytics/FacultyBar";
 import { RegistrationTrend } from "@/components/analytics/RegistrationTrend";
 import { TutorCoverage } from "@/components/analytics/TutorCoverage";
 import { LevelJuzBar } from "@/components/analytics/LevelJuzBar";
-import AssignmentTableView from "@/components/AssignmentTableView";
 
 export default function AdminDashboard(props: any) {
   const [viewMode, setViewMode] = useState<"time" | "gender">("time");
 
-  // Safely compute values from props passed by server or state
+  // Safely compute values from props passed by server
   const totalStudents = props.totalStudents ?? 0;
   const unassignedCount = props.unassignedCount ?? 0;
   const activeGroups = props.activeGroups ?? [];
@@ -117,6 +115,35 @@ export default function AdminDashboard(props: any) {
               Verified instructors
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* System Capacity Gauge */}
+      <div className="bg-white print:hidden p-5 md:p-6 rounded-xl border border-zinc-200 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <div>
+            <h2 className="text-sm md:text-base font-semibold text-zinc-900">
+              Total System Group Occupancy
+            </h2>
+            <p className="text-xs text-zinc-500">
+              Aggregated capacity utilization across active groups ({activeGroups.length} active groups, {totalTutors} total tutors)
+            </p>
+          </div>
+          <span className="text-xs md:text-sm font-semibold text-zinc-900">
+            {totalOccupied} / {totalCapacity} Slots ({capacityPercentage}%)
+          </span>
+        </div>
+        <div className="w-full bg-zinc-100 rounded-full h-2.5 md:h-3 overflow-hidden">
+          <div
+            className={`h-full transition-all duration-500 ${
+              capacityPercentage > 90
+                ? "bg-red-500"
+                : capacityPercentage > 75
+                ? "bg-amber-500"
+                : "bg-emerald-500"
+            }`}
+            style={{ width: `${Math.min(capacityPercentage, 100)}%` }}
+          />
         </div>
       </div>
 

@@ -3,26 +3,38 @@ import { redirect } from "next/navigation";
 import connectDB from "@/lib/db";
 import { IUser } from "@/models/user.model";
 import { getSession } from "@/actions/user.action";
+import { headers } from "next/headers";
+import { checkIsCrawler } from "@/lib/crawler";
 
 interface AdminLayoutProps {
-    children: ReactNode;
+  children: ReactNode;
 }
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
-    await connectDB();
+  await connectDB();
 
-    const user = (await getSession()) as IUser | null;
+  const headersList = await headers();
+  const isCrawler = checkIsCrawler(headersList);
 
-    if (!user || user.role?.toLowerCase() !== "admin") {
-        redirect("/dashboard");
-    }
+  if (isCrawler) {
+    return `NextResponse.json(
+      { message: "Crawler detected. Access to the dashboard is restricted." },
+      { status: 403 },
+    ); `;
+  }
 
-    return (
-        <div className="flex-1 justify-center align-center flex flex-col min-h-screen bg-[#FBFBF9]">
-            {/* Main Content Area */}
-            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-                {children}
-            </main>
-        </div>
-    );
+  const user = (await getSession()) as IUser | null;
+
+  if (!user || user.role?.toLowerCase() !== "admin") {
+    redirect("/dashboard");
+  }
+
+  return (
+    <div className="flex-1 justify-center align-center flex flex-col min-h-screen bg-[#FBFBF9]">
+      {/* Main Content Area */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        {children}
+      </main>
+    </div>
+  );
 }

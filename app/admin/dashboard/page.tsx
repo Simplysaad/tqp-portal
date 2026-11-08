@@ -2,15 +2,7 @@ import { getSession } from "@/actions/user.action";
 import { redirect } from "next/navigation";
 import { generateOSFAMetadata } from "@/lib/metadata";
 import Link from "next/link";
-import {
-  Users,
-  UserCheck,
-  ShieldAlert,
-  Layers,
-  ArrowUpRight,
-  BookOpen,
-  GraduationCap,
-} from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 import connectDB from "@/lib/db";
 import Student from "@/models/student.model";
@@ -19,6 +11,8 @@ import Tutor from "@/models/tutor.model";
 import { getAnalyticsData } from "@/lib/analytics";
 import AdminDashboard from "./AdminDashboard";
 import AssignmentTableView from "@/components/AssignmentTableView";
+import { headers } from "next/headers";
+import { checkIsCrawler } from "@/lib/crawler";
 
 export const metadata = generateOSFAMetadata({
   path: "/admin/dashboard",
@@ -32,6 +26,16 @@ export default async function AdminDashboardPage() {
   // 1. Authenticate & Authorize Admin Role
   const currentUser = await getSession();
 
+  const headersList = await headers();
+  const isCrawler = checkIsCrawler(headersList);
+
+  if (isCrawler) {
+    return `NextResponse.json(
+      { message: "Crawler detected. Access to the dashboard is restricted." },
+      { status: 403 },
+    ); `;
+  }
+
   if (!currentUser) {
     redirect("/login");
   }
@@ -39,7 +43,7 @@ export default async function AdminDashboardPage() {
   const { role } = currentUser as { id: string; role: string };
 
   if (role !== "admin") {
-    redirect("/onboarding");
+    redirect("/dashboard");
   }
 
   // 2. Fetch Database Metrics & Analytics Data in parallel
@@ -57,24 +61,6 @@ export default async function AdminDashboardPage() {
   // Sanitize Mongoose objects into clean plain JSON objects for Client Component props
   const activeGroups = JSON.parse(JSON.stringify(activeGroupsRaw));
   const analyticsData = JSON.parse(JSON.stringify(analyticsDataRaw));
-
-  const totalCapacity = activeGroups.reduce(
-    (acc: number, g: any) => acc + (g.rules?.maxCapacity ?? 5),
-    0,
-  );
-  const totalOccupied = activeGroups.reduce(
-    (acc: number, g: any) => acc + (g.students?.length ?? 0),
-    0,
-  );
-  const capacityPercentage =
-    totalCapacity > 0 ? Math.round((totalOccupied / totalCapacity) * 100) : 0;
-
-  // Most populated Juz calculation
-  const mostPopulatedJuz = analyticsData?.juzTimePivot 
-    ? [...analyticsData.juzTimePivot].sort((a: any, b: any) => b.total - a.total)[0]?.juzNum 
-    : "N/A";
-
-  const atRiskCount = analyticsData?.byStatus?.find((s: any) => s._id === "at risk")?.count || 0;
 
   return (
     <div className="space-y-6 md:space-y-8 p-4 md:p-8 md:max-w-7xl mx-auto">
@@ -99,115 +85,7 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Top Overview Cards (Combined KPIs) */}
-      <div className="grid print:hidden grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
-        <div className="bg-white p-4 md:p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] md:text-xs font-semibold tracking-wider uppercase text-zinc-500">
-              Active Students
-            </span>
-            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-              <Users className="w-4 h-4 md:w-5 md:h-5" />
-            </div>
-          </div>
-          <div className="mt-3 md:mt-4">
-            <span className="text-2xl md:text-3xl font-bold text-zinc-900">
-              {totalStudents}
-            </span>
-            <p className="text-[11px] md:text-xs text-zinc-500 mt-0.5">
-              Enrolled faculties
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 md:p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] md:text-xs font-semibold tracking-wider uppercase text-zinc-500">
-              Unassigned
-            </span>
-            <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
-              <ShieldAlert className="w-4 h-4 md:w-5 md:h-5" />
-            </div>
-          </div>
-          <div className="mt-3 md:mt-4">
-            <span className="text-2xl md:text-3xl font-bold text-amber-600">
-              {unassignedCount}
-            </span>
-            <p className="text-[11px] md:text-xs text-zinc-500 mt-0.5">
-              Awaiting allocation
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 md:p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] md:text-xs font-semibold tracking-wider uppercase text-zinc-500">
-              Most Populated Juz
-            </span>
-            <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg">
-              <BookOpen className="w-4 h-4 md:w-5 md:h-5" />
-            </div>
-          </div>
-          <div className="mt-3 md:mt-4">
-            <span className="text-2xl md:text-3xl font-bold text-zinc-900">
-              Juz {mostPopulatedJuz}
-            </span>
-            <p className="text-[11px] md:text-xs text-zinc-500 mt-0.5">
-              Highest density
-            </p>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 md:p-6 rounded-xl border border-zinc-200 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] md:text-xs font-semibold tracking-wider uppercase text-zinc-500">
-              At Risk
-            </span>
-            <div className="p-2 bg-red-50 text-red-600 rounded-lg">
-              <GraduationCap className="w-4 h-4 md:w-5 md:h-5" />
-            </div>
-          </div>
-          <div className="mt-3 md:mt-4">
-            <span className="text-2xl md:text-3xl font-bold text-red-600">
-              {atRiskCount}
-            </span>
-            <p className="text-[11px] md:text-xs text-zinc-500 mt-0.5">
-              Requires attention
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* System Capacity Gauge */}
-      <div className="bg-white print:hidden p-5 md:p-6 rounded-xl border border-zinc-200 shadow-sm space-y-3">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <div>
-            <h2 className="text-sm md:text-base font-semibold text-zinc-900">
-              Total System Group Occupancy
-            </h2>
-            <p className="text-xs text-zinc-500">
-              Aggregated capacity utilization across active groups ({activeGroups.length} active groups, {totalTutors} total tutors)
-            </p>
-          </div>
-          <span className="text-xs md:text-sm font-semibold text-zinc-900">
-            {totalOccupied} / {totalCapacity} Slots ({capacityPercentage}%)
-          </span>
-        </div>
-        <div className="w-full bg-zinc-100 rounded-full h-2.5 md:h-3 overflow-hidden">
-          <div
-            className={`h-full transition-all duration-500 ${
-              capacityPercentage > 90
-                ? "bg-red-500"
-                : capacityPercentage > 75
-                ? "bg-amber-500"
-                : "bg-emerald-500"
-            }`}
-            style={{ width: `${Math.min(capacityPercentage, 100)}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Analytics Client (Charts & Graphs) */}
+      {/* Unified Client Component Dashboard containing KPIs, Gauges, Charts, & Tables */}
       <AdminDashboard 
         {...analyticsData} 
         totalStudents={totalStudents}
@@ -217,7 +95,7 @@ export default async function AdminDashboardPage() {
       />
 
       {/* Assignment Table View Component */}
-       <AssignmentTableView />
+      <AssignmentTableView />
     </div>
   );
 }
