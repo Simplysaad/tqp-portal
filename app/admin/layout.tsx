@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import connectDB from "@/lib/db";
 import { IUser } from "@/models/user.model";
 import { getSession } from "@/actions/user.action";
-import AdminNav from "@/components/AdminNav";
 
 interface AdminLayoutProps {
     children: ReactNode;
